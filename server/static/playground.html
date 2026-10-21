@@ -1,0 +1,730 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GestureGrasp Playground</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👉</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --fog: #e9eef2;        /* page */
+    --paper: #ffffff;      /* cards */
+    --ink: #14213d;        /* primary text */
+    --ink-2: #4a5672;      /* secondary text */
+    --ink-3: #7b869c;      /* muted text */
+    --line: #d3dce4;       /* hairlines */
+    --teal: #0f7173;       /* what the model sees */
+    --teal-soft: #d5ecec;
+    --amber: #e8a33d;      /* holding a gesture */
+    --amber-soft: #fbecd2;
+    --coral: #d9483b;      /* stop, reserved */
+    --coral-soft: #f8dcd8;
+    --stage: #0e1726;      /* camera frame */
+    --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+    --body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  html { color-scheme: light; }
+  body {
+    margin: 0; background: var(--fog); color: var(--ink);
+    font: 16px/1.5 var(--body); -webkit-font-smoothing: antialiased;
+  }
+  button, input { font: inherit; }
+  :focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; border-radius: 6px; }
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 20px clamp(16px, 3vw, 32px) 40px; }
+
+  /* header */
+  header { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+  .brand { display: flex; align-items: baseline; gap: 10px; margin-right: auto; }
+  .brand b { font: 700 1.55rem/1 var(--display); letter-spacing: -0.02em; }
+  .brand span { font-size: .95rem; color: var(--ink-2); }
+  .chip {
+    display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px;
+    background: var(--paper); border: 1px solid var(--line); font-size: .85rem; color: var(--ink-2);
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-3); }
+  .dot.ok { background: var(--teal); }
+  .dot.bad { background: var(--coral); }
+
+  /* toolbar */
+  .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+  .tabs { display: inline-flex; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 4px; }
+  .tab {
+    border: 0; background: transparent; color: var(--ink-2); padding: 8px 14px; border-radius: 9px; cursor: pointer;
+  }
+  .tab[aria-selected="true"] { background: var(--ink); color: #fff; }
+  .spacer { margin-left: auto; }
+  .toggle { display: inline-flex; align-items: center; gap: 8px; color: var(--ink-2); font-size: .9rem; cursor: pointer; }
+  .btn {
+    border: 1px solid var(--line); background: var(--paper); color: var(--ink); padding: 8px 14px;
+    border-radius: 10px; cursor: pointer;
+  }
+  .btn:hover { border-color: var(--ink-3); }
+  .btn.stop { background: var(--coral); border-color: var(--coral); color: #fff; font-weight: 700; }
+  .btn.stop:hover { filter: brightness(.95); }
+
+  /* main grid */
+  .main { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(300px, 1fr); gap: 18px; align-items: start; }
+  .card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; }
+  .label {
+    font: 500 .72rem/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3);
+    margin: 0 0 12px;
+  }
+
+  /* stage */
+  .stage-card { padding: 0; overflow: hidden; }
+  .stage {
+    position: relative; background: var(--stage); aspect-ratio: 4 / 3; display: grid; place-items: center;
+  }
+  .stage video, .stage img.view, .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+  .stage video.mirror { transform: scaleX(-1); }
+  .empty { position: relative; text-align: center; color: #c9d3e0; max-width: 340px; padding: 20px; }
+  .empty h2 { font: 700 1.4rem/1.2 var(--display); color: #fff; margin: 0 0 8px; }
+  .empty p { margin: 0 0 16px; }
+  .empty .btn { background: #fff; }
+
+  /* the interpreter caption: the signature */
+  .caption { padding: 20px 24px 22px; border-top: 1px solid var(--line); }
+  .says { font: 700 clamp(1.6rem, 3.1vw, 2.6rem)/1.15 var(--display); letter-spacing: -0.02em; margin: 0; min-height: 1.2em; }
+  .says em { font-style: normal; color: var(--teal); box-shadow: inset 0 -0.18em 0 var(--teal-soft); }
+  .says.unsure { color: var(--ink-3); }
+  .says.stop { color: var(--coral); }
+  .hold { height: 6px; background: var(--fog); border-radius: 3px; margin: 14px 0 12px; overflow: hidden; }
+  .hold i { display: block; height: 100%; width: 0; background: var(--amber); border-radius: 3px; transition: width .12s linear; }
+  .hold.fired i { background: var(--teal); }
+  .caption-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .next { color: var(--ink-2); margin: 0; }
+  .next b { color: var(--ink); }
+  .sent {
+    margin-left: auto; font: 500 .85rem/1 var(--mono); padding: 7px 11px; border-radius: 8px;
+    background: var(--teal-soft); color: var(--teal); opacity: 0; transform: translateY(4px);
+    transition: opacity .2s, transform .2s;
+  }
+  .sent.show { opacity: 1; transform: none; }
+
+  /* side panel */
+  .side { display: grid; gap: 18px; }
+  .bars { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; }
+  .bar { display: grid; grid-template-columns: 112px 1fr 46px; align-items: center; gap: 10px; font-size: .9rem; }
+  .bar .name { color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar.top .name { color: var(--ink); font-weight: 700; }
+  .track { position: relative; height: 10px; background: var(--fog); border-radius: 5px; }
+  .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: var(--teal); border-radius: 5px; opacity: .45; transition: width .15s ease-out; }
+  .bar.top .fill { opacity: 1; }
+  .tick { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink); opacity: .55; border-radius: 1px; }
+  .pct { font: 400 .82rem/1 var(--mono); color: var(--ink-2); text-align: right; }
+  .legend-note { font-size: .8rem; color: var(--ink-3); margin: 10px 0 0; display: flex; gap: 6px; align-items: center; }
+  .legend-note .tick-key { width: 2px; height: 12px; background: var(--ink); opacity: .55; display: inline-block; }
+
+  .facts { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; margin: 0; font-size: .92rem; }
+  .facts dt { color: var(--ink-2); }
+  .facts dd { margin: 0; font: 500 .9rem/1.5 var(--mono); text-align: right; }
+  .pass { color: var(--teal); }
+  .fail { color: var(--coral); }
+  .reason { margin: 12px 0 0; font-size: .85rem; color: var(--ink-3); }
+  .objects { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .obj { font-size: .82rem; padding: 4px 9px; border-radius: 999px; background: var(--fog); color: var(--ink-2); }
+  .obj.hit { background: var(--teal); color: #fff; }
+
+  /* conversation track: the real order of the robot's steps */
+  .left { display: grid; gap: 18px; }
+  .steps { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0; padding: 0; list-style: none; }
+  .step {
+    padding: 9px 14px; border-radius: 10px; border: 1px solid var(--line); color: var(--ink-3); background: var(--paper);
+    font-size: .92rem; transition: background .2s, color .2s;
+  }
+  .step.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .step.on.stopped { background: var(--coral); border-color: var(--coral); }
+  .arrow { color: var(--ink-3); }
+  .branch { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+  .branch small { color: var(--ink-3); }
+
+  .lower { display: grid; grid-template-columns: 1fr 1fr 1.25fr; gap: 18px; margin-top: 18px; }
+  svg.map { width: 100%; height: auto; display: block; background: var(--fog); border-radius: 10px; }
+  .map text { font: 700 22px var(--body); fill: var(--ink-2); }
+  .robot-line { margin: 10px 0 0; font-size: .9rem; color: var(--ink-2); }
+  .log { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; max-height: 260px; overflow: auto; }
+  .log li { display: grid; grid-template-columns: 64px 1fr; gap: 10px; font-size: .9rem; }
+  .log time { font: 400 .8rem/1.6 var(--mono); color: var(--ink-3); }
+  .log li.none { display: block; color: var(--ink-3); }
+  .gestures { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .g { border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px; transition: border-color .2s, background .2s; }
+  .g .e { font-size: 1.35rem; line-height: 1; }
+  .g b { display: block; font-size: .92rem; margin-top: 4px; }
+  .g small { color: var(--ink-3); font-size: .8rem; }
+  .g.now { border-color: var(--teal); background: var(--teal-soft); }
+
+  footer { margin-top: 22px; color: var(--ink-2); font-size: .88rem; display: flex; flex-wrap: wrap; gap: 6px 22px; }
+  footer b { font-family: var(--mono); font-weight: 500; color: var(--ink); }
+
+  .hidden { display: none !important; }
+  @media (max-width: 560px) {
+    .tabs { display: flex; width: 100%; }
+    .tab { flex: 1; padding: 8px 6px; font-size: .9rem; }
+    .brand span { display: none; }
+  }
+  @media (max-width: 1000px) {
+    .main { grid-template-columns: 1fr; }
+    .lower { grid-template-columns: 1fr; }
+    .branch { margin-left: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><b>GestureGrasp</b><span>Playground: see what the model reads from your hand</span></div>
+    <span class="chip" id="modelChip"><span class="dot"></span><span>Loading model…</span></span>
+    <span class="chip" id="connChip"><span class="dot"></span><span>Not streaming</span></span>
+  </header>
+
+  <div class="toolbar">
+    <div class="tabs" role="tablist" aria-label="Camera source">
+      <button class="tab" role="tab" aria-selected="true" data-src="webcam">Your webcam</button>
+      <button class="tab" role="tab" aria-selected="false" data-src="pi">Raspberry Pi camera</button>
+      <button class="tab" role="tab" aria-selected="false" data-src="photo">A photo</button>
+    </div>
+    <label class="toggle" id="mirrorWrap"><input type="checkbox" id="mirror" checked> Mirror my view</label>
+    <span class="spacer"></span>
+    <button class="btn" id="resetBtn">Start over</button>
+    <button class="btn stop" id="stopBtn">Stop robot</button>
+  </div>
+
+  <div class="main">
+    <div class="left">
+    <section class="card stage-card" aria-label="Camera">
+      <div class="stage" id="stage">
+        <video id="video" class="mirror hidden" autoplay playsinline muted></video>
+        <img id="view" class="view hidden" alt="">
+        <canvas id="overlay"></canvas>
+        <div class="empty" id="empty">
+          <h2>Show me your hand</h2>
+          <p>Your webcam frames go to the same model and decision logic the Raspberry Pi uses. Nothing is recorded.</p>
+          <button class="btn" id="startBtn">Turn on webcam</button>
+          <input type="file" id="photoInput" accept="image/*" class="hidden">
+        </div>
+      </div>
+      <div class="caption">
+        <p class="says unsure" id="says" aria-live="polite">Waiting for a hand…</p>
+        <div class="hold" id="hold" title="Hold progress"><i></i></div>
+        <div class="caption-row">
+          <p class="next" id="next">Next: <b>show the call-me sign to start.</b></p>
+          <span class="sent" id="sent">Sent</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="card flow" aria-label="Where the robot is in the task">
+      <p class="label">Robot's task, step by step</p>
+      <ol class="steps" id="steps"></ol>
+    </section>
+    </div>
+
+    <div class="side">
+      <section class="card">
+        <p class="label">What the model sees</p>
+        <ul class="bars" id="bars"></ul>
+        <p class="legend-note"><span class="tick-key"></span> confidence a gesture needs before it can count</p>
+      </section>
+
+      <section class="card">
+        <p class="label">Decision</p>
+        <dl class="facts">
+          <dt>Gesture</dt><dd id="fGesture">—</dd>
+          <dt>Confidence</dt><dd id="fConf">—</dd>
+          <dt>Lead over runner-up</dt><dd id="fMargin">—</dd>
+          <dt>Held for</dt><dd id="fHold">—</dd>
+          <dt>Command</dt><dd id="fIntent">—</dd>
+        </dl>
+        <p class="reason" id="fReason"></p>
+      </section>
+
+      <section class="card">
+        <p class="label">Pointing &amp; objects</p>
+        <dl class="facts">
+          <dt>Pointing at</dt><dd id="pTarget">—</dd>
+          <dt>Off-centre</dt><dd id="pAngle">—</dd>
+          <dt>Steady on it</dt><dd id="pSteady">—</dd>
+        </dl>
+        <div class="objects" id="objects"></div>
+      </section>
+
+      <section class="card">
+        <p class="label">Speed</p>
+        <dl class="facts">
+          <dt>Server processing</dt><dd id="sLatency">—</dd>
+          <dt>Round trip</dt><dd id="sRtt">—</dd>
+          <dt>Frames per second</dt><dd id="sFps">—</dd>
+        </dl>
+      </section>
+    </div>
+  </div>
+
+
+  <div class="lower">
+    <section class="card">
+      <p class="label">Robot (top-down)</p>
+      <svg class="map" id="map" viewBox="0 0 640 600" role="img" aria-label="Robot map"></svg>
+      <p class="robot-line" id="robotLine">—</p>
+    </section>
+    <section class="card">
+      <p class="label">Commands sent</p>
+      <ol class="log" id="log"><li class="none">Hold a gesture until the bar fills to send a command.</li></ol>
+    </section>
+    <section class="card">
+      <p class="label">Gestures it understands</p>
+      <ul class="gestures" id="gestures"></ul>
+    </section>
+  </div>
+
+  <footer id="footer"></footer>
+</div>
+
+<script>
+const token = new URLSearchParams(location.search).get("token");
+const withToken = (url) => token ? `${url}${url.includes("?") ? "&" : "?"}token=${encodeURIComponent(token)}` : url;
+const $ = (id) => document.getElementById(id);
+
+const GESTURE = {
+  call:       { name: "Call me",     emoji: "🤙", does: "Wake up" },
+  point:      { name: "Point",       emoji: "👉", does: "Pick an object" },
+  like:       { name: "Thumbs up",   emoji: "👍", does: "Yes, fetch it" },
+  dislike:    { name: "Thumbs down", emoji: "👎", does: "No, not that" },
+  stop:       { name: "Stop",        emoji: "✋", does: "Stop now" },
+  peace:      { name: "Peace",       emoji: "✌️", does: "Go home" },
+  ok:         { name: "OK",          emoji: "👌", does: "Done, thanks" },
+  fist:       { name: "Fist",        emoji: "✊", does: "Not a command" },
+  no_gesture: { name: "Relaxed hand", emoji: "🖐", does: "Not a command" },
+};
+const ORDER = ["call", "point", "like", "dislike", "stop", "peace", "ok", "fist", "no_gesture"];
+const INTENT = { WAKE: "Wake up", SELECT_TARGET: "Pick object", CONFIRM: "Confirm", REJECT: "Reject",
+  STOP: "Stop", RETURN_HOME: "Go home", ACKNOWLEDGE: "Done", NONE: "None", HARD_NEGATIVE: "None" };
+const STATE = { IDLE: "Asleep", LISTENING: "Listening", TARGET_PROPOSED: "Object proposed",
+  EXECUTING: "Fetching", AWAIT_FEEDBACK: "Delivered", RETURNING: "Going home", STOPPED: "Stopped" };
+const MAIN_FLOW = ["IDLE", "LISTENING", "TARGET_PROPOSED", "EXECUTING", "AWAIT_FEEDBACK"];
+
+let config = null, source = "webcam", ws = null, stream = null, pollTimer = null;
+let sentAt = 0, lastFrameAt = 0, fps = 0, lastState = null, lastOverlay = null;
+const capture = document.createElement("canvas");
+
+/* ---------- static parts ---------- */
+function buildStatic() {
+  $("bars").innerHTML = ORDER.map(g => `
+    <li class="bar" data-g="${g}">
+      <span class="name">${GESTURE[g].emoji} ${GESTURE[g].name}</span>
+      <span class="track"><span class="fill"></span><span class="tick"></span></span>
+      <span class="pct">—</span>
+    </li>`).join("");
+  $("gestures").innerHTML = ORDER.slice(0, 7).map(g => `
+    <li class="g" data-g="${g}"><span class="e">${GESTURE[g].emoji}</span><b>${GESTURE[g].name}</b>
+    <small>${GESTURE[g].does}<br>hold ${config ? config.gestures[g].hold_time : "?"} s</small></li>`).join("");
+  const flow = MAIN_FLOW.map(s => `<li class="step" data-s="${s}">${STATE[s]}</li>`).join('<li class="arrow" aria-hidden="true">→</li>');
+  $("steps").innerHTML = flow + `<li class="branch"><small>any time:</small>
+    <span class="step" data-s="RETURNING">${STATE.RETURNING}</span><span class="step" data-s="STOPPED">${STATE.STOPPED}</span></li>`;
+  if (config) {
+    document.querySelectorAll(".bar").forEach(el => {
+      const need = config.gestures[el.dataset.g]?.min_conf ?? 0.5;
+      el.querySelector(".tick").style.left = `calc(${need * 100}% - 1px)`;
+    });
+  }
+  drawMap(null);
+}
+
+async function loadConfig() {
+  try {
+    config = await (await fetch("/config")).json();
+    const m = config.model;
+    const device = (m.detector_device || "").startsWith("cuda") ? "GPU" : "CPU";
+    const objects = (m.detector || "").startsWith("mock") ? "test objects (no YOLO)" : `YOLO on ${device}`;
+    setChip("modelChip", "ok", `Neural net (features ${m.feature_version}) · ${objects}`);
+    const pct = (v) => v == null ? "—" : `${(v * 100).toFixed(1)}%`;
+    $("footer").innerHTML = `
+      <span>Measured on people the model never saw:</span>
+      <span>accuracy score (macro-F1) <b>${m.live_macro_f1?.toFixed(3) ?? "—"}</b></span>
+      <span>STOP caught <b>${pct(m.stop_recall)}</b></span>
+      <span>users aged 60+ <b>${m.age_60_plus_macro_f1?.toFixed(3) ?? "—"}</b></span>
+      <span>trained ${m.trained ? new Date(m.trained).toLocaleDateString() : "—"}</span>`;
+  } catch (e) {
+    setChip("modelChip", "bad", "Server not reachable");
+  }
+  buildStatic();
+}
+
+function setChip(id, cls, text) {
+  const chip = $(id);
+  chip.querySelector(".dot").className = `dot ${cls}`;
+  chip.querySelector("span:last-child").textContent = text;
+}
+
+/* ---------- sources ---------- */
+function stopAll() {
+  if (ws) { ws.onclose = null; ws.close(); ws = null; }
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  clearInterval(pollTimer); pollTimer = null;
+  $("video").classList.add("hidden"); $("view").classList.add("hidden");
+  $("view").removeAttribute("src");
+  lastOverlay = null;
+  clearOverlay();
+  setChip("connChip", "", "Not streaming");
+}
+
+function selectSource(src) {
+  source = src;
+  document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", String(t.dataset.src === src)));
+  stopAll();
+  $("mirrorWrap").classList.toggle("hidden", src !== "webcam");
+  const empty = $("empty");
+  empty.classList.remove("hidden");
+  if (src === "webcam") {
+    empty.querySelector("h2").textContent = "Show me your hand";
+    empty.querySelector("p").textContent = "Your webcam frames go to the same model and decision logic the Raspberry Pi uses. Nothing is recorded.";
+    $("startBtn").textContent = "Turn on webcam";
+  } else if (src === "pi") {
+    empty.classList.add("hidden");
+    startPiWatch();
+  } else {
+    empty.querySelector("h2").textContent = "Try a photo";
+    empty.querySelector("p").textContent = "Pick a photo with a hand in it. A single photo shows what the model reads; commands need a held gesture, so none are sent.";
+    $("startBtn").textContent = "Choose a photo";
+  }
+}
+
+async function startWebcam() {
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: false });
+  } catch (e) {
+    $("empty").querySelector("p").textContent = "The browser blocked the camera. Allow camera access for this page (camera icon in the address bar), then try again.";
+    return;
+  }
+  const video = $("video");
+  video.srcObject = stream;
+  video.classList.remove("hidden");
+  $("empty").classList.add("hidden");
+  await video.play();
+  openSocket();
+}
+
+function openSocket() {
+  const proto = location.protocol === "https:" ? "wss" : "ws";
+  ws = new WebSocket(withToken(`${proto}://${location.host}/ws/stream`));
+  ws.binaryType = "arraybuffer";
+  ws.onopen = () => { setChip("connChip", "ok", "Streaming your webcam"); sendFrame(); };
+  ws.onmessage = (ev) => {
+    const result = JSON.parse(ev.data);
+    render(result, performance.now() - sentAt);
+    requestAnimationFrame(sendFrame);     // lock-step: next frame only after this answer
+  };
+  ws.onclose = (ev) => {
+    setChip("connChip", "bad", ev.code === 1008 ? "Wrong or missing token (?token=…)" : "Disconnected, retrying…");
+    if (source === "webcam" && stream) setTimeout(openSocket, 1500);
+  };
+}
+
+function sendFrame() {
+  const video = $("video");
+  if (!ws || ws.readyState !== 1 || !video.videoWidth) return;
+  const scale = Math.min(1, 640 / video.videoWidth);
+  capture.width = Math.round(video.videoWidth * scale);
+  capture.height = Math.round(video.videoHeight * scale);
+  capture.getContext("2d").drawImage(video, 0, 0, capture.width, capture.height);
+  capture.toBlob((blob) => {
+    if (!blob || !ws || ws.readyState !== 1) return;
+    sentAt = performance.now();
+    ws.send(blob);
+  }, "image/jpeg", 0.8);
+}
+
+function startPiWatch() {
+  const view = $("view");
+  view.src = withToken("/video");
+  view.classList.remove("hidden");
+  setChip("connChip", "", "Waiting for the Pi…");
+  let lastSeen = null;
+  pollTimer = setInterval(async () => {
+    try {
+      const r = await (await fetch("/latest")).json();
+      if (r.waiting) { setChip("connChip", "", "No frames yet: start pi_client on the Pi"); return; }
+      const key = JSON.stringify([r.latency_ms, r.hold_progress, r.confidence, r.state]);
+      if (key !== lastSeen) { setChip("connChip", "ok", "Watching the Pi's camera"); lastSeen = key; render(r, null, false); }
+    } catch (e) { setChip("connChip", "bad", "Server not reachable"); }
+  }, 200);
+}
+
+async function sendPhoto(file) {
+  const view = $("view");
+  view.src = URL.createObjectURL(file);
+  view.classList.remove("hidden");
+  $("empty").classList.add("hidden");
+  await fetch(withToken("/reset"), { method: "POST" });     // a photo is judged on its own
+  const t0 = performance.now();
+  const res = await fetch(withToken("/infer"), { method: "POST", body: file });
+  if (!res.ok) { $("says").textContent = "That file could not be read as an image."; return; }
+  render(await res.json(), performance.now() - t0);
+  setChip("connChip", "ok", "Photo analysed");
+}
+
+/* ---------- rendering ---------- */
+function captionFor(r) {
+  if (!r.hand_detected) return { html: "No hand in view.", cls: "unsure" };
+  const g = r.gesture, conf = r.confidence ?? 0;
+  const need = config?.gestures[g]?.min_conf ?? 0.5;
+  const marginOk = (r.margin ?? 1) >= (config?.margin_threshold ?? 0.2);
+  const target = r.pointing_at, proposed = r.proposed_target;
+  const obj = (name) => `<em>${name}</em>`;
+  let text;
+  switch (g) {
+    case "point": text = target ? `You're pointing at the ${obj(target)}.` : "You're pointing, but not at an object I know."; break;
+    case "call": text = "Call-me sign: waking up."; break;
+    case "like": text = proposed ? `Thumbs up: yes, fetch the ${obj(proposed)}.` : "Thumbs up."; break;
+    case "dislike": text = proposed ? `Thumbs down: not the ${obj(proposed)}.` : "Thumbs down."; break;
+    case "stop": text = "Stop! The robot halts."; break;
+    case "peace": text = "Peace sign: go back to the dock."; break;
+    case "ok": text = "OK: got it, thank you."; break;
+    case "fist": text = "A closed fist. Not a command."; break;
+    default: text = "A relaxed hand. Not a command.";
+  }
+  if (conf < need || !marginOk) {
+    return { html: `Not sure yet… maybe ${GESTURE[g]?.name.toLowerCase() ?? g}?`, cls: "unsure" };
+  }
+  return { html: text, cls: g === "stop" ? "stop" : "" };
+}
+
+let sentTimer = null;
+function render(r, rttMs, drawOverlay = true) {
+  if (!r || r.error) return;
+  const now = performance.now();
+  if (lastFrameAt) fps = 0.8 * fps + 0.2 * (1000 / Math.max(1, now - lastFrameAt));
+  lastFrameAt = now;
+
+  // caption (signature)
+  const cap = captionFor(r);
+  const says = $("says");
+  says.innerHTML = cap.html;
+  says.className = `says ${cap.cls}`;
+  const hold = $("hold");
+  hold.querySelector("i").style.width = `${Math.round((r.intent_fired ? 1 : r.hold_progress || 0) * 100)}%`;
+  hold.classList.toggle("fired", !!r.intent_fired);
+  $("next").innerHTML = `Next: <b>${(r.message || "").replace(/^./, c => c.toLowerCase())}</b>`;
+  renderCommands(r.commands);
+
+  // probability bars (smoothed: what the decision logic acts on)
+  const probs = r.probabilities || {};
+  const top = Object.entries(probs).sort((a, b) => b[1] - a[1])[0]?.[0];
+  document.querySelectorAll(".bar").forEach(el => {
+    const p = probs[el.dataset.g] ?? 0;
+    el.querySelector(".fill").style.width = `${(p * 100).toFixed(1)}%`;
+    el.querySelector(".pct").textContent = r.hand_detected ? `${Math.round(p * 100)}%` : "—";
+    el.classList.toggle("top", r.hand_detected && el.dataset.g === top);
+  });
+
+  // decision facts
+  const g = r.gesture, meta = config?.gestures[g];
+  const need = meta?.min_conf ?? 0.5, mt = config?.margin_threshold ?? 0.2;
+  const ok = (cond, text) => `<span class="${cond ? "pass" : "fail"}">${text}</span>`;
+  if (r.hand_detected) {
+    $("fGesture").textContent = `${GESTURE[g]?.emoji ?? ""} ${GESTURE[g]?.name ?? g}`;
+    $("fConf").innerHTML = ok(r.confidence >= need, `${(r.confidence * 100).toFixed(1)}% (needs ${Math.round(need * 100)}%)`);
+    $("fMargin").innerHTML = r.margin == null ? "—" : ok(r.margin >= mt, `${(r.margin * 100).toFixed(0)} pts (needs ${Math.round(mt * 100)})`);
+    const holdTime = meta?.hold_time ?? 0;
+    $("fHold").textContent = meta?.actionable ? `${((r.hold_progress || 0) * holdTime).toFixed(2)} of ${holdTime} s` : "not a command";
+    $("fIntent").textContent = meta?.actionable ? (INTENT[r.intent] || r.intent) : "none";
+  } else {
+    ["fGesture", "fConf", "fMargin", "fHold", "fIntent"].forEach(id => $(id).textContent = "—");
+  }
+  $("fReason").textContent = explainReason(r);
+
+  // pointing
+  const pt = r.pointing;
+  $("pTarget").innerHTML = pt ? `<span class="pass">${pt.label}</span>${pt.direct_hit ? " (direct hit)" : ""}`
+    : (r.hand_detected && r.gesture !== "point" ? "only while pointing" : "—");
+  $("pAngle").textContent = pt?.angular_deviation_deg != null ? `${pt.angular_deviation_deg.toFixed(1)}°` : "—";
+  $("pSteady").textContent = pt ? `${Math.round((pt.hold_progress || 0) * 100)}%` : "—";
+  const objs = r.objects || [];
+  $("objects").innerHTML = objs.length
+    ? objs.map(o => `<span class="obj ${o.label === r.pointing_at ? "hit" : ""}">${o.label} ${Math.round(o.confidence * 100)}%</span>`).join("")
+    : `<span class="obj">No ${config ? config.allowed_objects.slice(0, 3).join(", ") : "objects"}… in view</span>`;
+
+  // speed
+  $("sLatency").textContent = r.latency_ms != null ? `${r.latency_ms.toFixed(0)} ms` : "—";
+  $("sRtt").textContent = rttMs != null ? `${rttMs.toFixed(0)} ms` : (source === "pi" ? "measured on the Pi" : "—");
+  $("sFps").textContent = fps ? fps.toFixed(1) : "—";
+
+  // task steps, gestures, robot
+  document.querySelectorAll(".step").forEach(el => {
+    const on = el.dataset.s === r.state;
+    el.classList.toggle("on", on);
+    el.classList.toggle("stopped", on && r.state === "STOPPED");
+  });
+  document.querySelectorAll(".g").forEach(el => el.classList.toggle("now", r.hand_detected && el.dataset.g === g));
+  if (r.state !== lastState) lastState = r.state;
+  drawMap(r);
+  lastOverlay = drawOverlay ? r : null;
+  if (drawOverlay) drawOverlayFor(r); else clearOverlay();
+}
+
+function explainReason(r) {
+  const why = r.reason || "";
+  const g = GESTURE[r.gesture]?.name ?? r.gesture;
+  let m;
+  if (!r.hand_detected) return why.includes("buffer") ? "Hand lost for a moment; keeping the hold for a few frames." : "";
+  if ((m = why.match(/not permitted in state '(\w+)'/))) {
+    const need = { IDLE: "Wake the robot with the call-me sign first.",
+                   STOPPED: "The robot is stopped; show the call-me sign to continue." }[m[1]];
+    return `${g} doesn't do anything while the robot is ${(STATE[m[1]] || m[1]).toLowerCase()}. ${need || ""}`.trim();
+  }
+  if (why.startsWith("Cooldown")) return "Just sent a command; a short pause before the next one.";
+  if (why.startsWith("Below confidence")) return "Not confident enough yet. Hold the gesture clearly in view.";
+  if (why.startsWith("Insufficient margin")) return "Two gestures look alike right now; make the gesture more distinct.";
+  if (why.startsWith("Non-actionable")) return "This hand pose is deliberately ignored.";
+  if (why.startsWith("Holding")) return "Keep holding until the bar under the sentence fills.";
+  if (why.includes("fired")) return "Held long enough: command sent.";
+  return why;
+}
+
+let lastCommandId;  // undefined until the first result: history that existed before is not "new"
+function renderCommands(commands) {
+  if (!commands) return;
+  const newest = commands[commands.length - 1];
+  if (!newest) lastCommandId = 0;
+  else if (newest.id !== lastCommandId) {
+    if (lastCommandId !== undefined) {
+      const sent = $("sent");
+      sent.textContent = `Sent: ${INTENT[newest.intent] || newest.intent} ✓`;
+      sent.classList.add("show");
+      clearTimeout(sentTimer); sentTimer = setTimeout(() => sent.classList.remove("show"), 2200);
+      $("hold").classList.add("fired");
+    }
+    lastCommandId = newest.id;
+  }
+  $("log").innerHTML = commands.length ? commands.slice().reverse().map(c => {
+    const t = new Date(c.time * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+    const what = c.target && ["SELECT_TARGET", "CONFIRM", "REJECT"].includes(c.intent) ? `: ${c.target}` : "";
+    return `<li><time>${t}</time><span>${GESTURE[c.gesture]?.emoji ?? ""} ${INTENT[c.intent] || c.intent}${what} → ${STATE[c.state] || c.state}</span></li>`;
+  }).join("") : '<li class="none">Hold a gesture until the bar fills to send a command.</li>';
+}
+
+/* ---------- overlay: hand, ray, objects ---------- */
+const BONES = [[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[0,17],[17,18],[18,19],[19,20]];
+
+function clearOverlay() {
+  const c = $("overlay");
+  c.getContext("2d").clearRect(0, 0, c.width, c.height);
+}
+
+function drawOverlayFor(r) {
+  const c = $("overlay"), box = $("stage").getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  c.width = box.width * dpr; c.height = box.height * dpr;
+  const ctx = c.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, box.width, box.height);
+  const [fw, fh] = r.frame_size || [640, 480];
+  // object-fit: contain -> letterboxed image rectangle inside the stage
+  const s = Math.min(box.width / fw, box.height / fh);
+  const ox = (box.width - fw * s) / 2, oy = (box.height - fh * s) / 2;
+  const mirror = source === "webcam" && $("mirror").checked;
+  const X = (px) => ox + (mirror ? fw - px : px) * s;
+  const Y = (py) => oy + py * s;
+
+  ctx.lineWidth = 2; ctx.font = "600 13px Atkinson Hyperlegible, sans-serif";
+  for (const o of r.objects || []) {
+    const [x1, y1, x2, y2] = o.bbox;
+    const left = Math.min(X(x1), X(x2)), w = Math.abs(X(x2) - X(x1));
+    const hit = o.label === r.pointing_at;
+    ctx.strokeStyle = hit ? "#4fd1c5" : "rgba(255,255,255,.7)";
+    ctx.lineWidth = hit ? 3 : 2;
+    ctx.strokeRect(left, Y(y1), w, Y(y2) - Y(y1));
+    const label = `${o.label} ${Math.round(o.confidence * 100)}%`;
+    const tw = ctx.measureText(label).width + 12;
+    ctx.fillStyle = hit ? "#0f7173" : "rgba(14,23,38,.75)";
+    ctx.fillRect(left, Y(y1) - 22, tw, 20);
+    ctx.fillStyle = "#fff"; ctx.fillText(label, left + 6, Y(y1) - 7);
+  }
+
+  if (r.pointing_ray && r.gesture === "point") {
+    const { origin, direction } = r.pointing_ray;
+    const len = Math.max(fw, fh) * 1.5;
+    const dx = mirror ? -direction[0] : direction[0];
+    ctx.strokeStyle = "#e8a33d"; ctx.lineWidth = 3; ctx.setLineDash([10, 7]);
+    ctx.beginPath(); ctx.moveTo(X(origin[0]), Y(origin[1]));
+    ctx.lineTo(X(origin[0]) + dx * len * s, Y(origin[1]) + direction[1] * len * s); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  if (r.landmarks) {
+    const pts = r.landmarks.map(([x, y]) => [X(x * fw), Y(y * fh)]);
+    ctx.strokeStyle = "rgba(255,255,255,.9)"; ctx.lineWidth = 2.5;
+    for (const [a, b] of BONES) { ctx.beginPath(); ctx.moveTo(...pts[a]); ctx.lineTo(...pts[b]); ctx.stroke(); }
+    pts.forEach(([x, y], i) => {
+      ctx.fillStyle = [4, 8, 12, 16, 20].includes(i) ? "#4fd1c5" : "#ffffff";
+      ctx.beginPath(); ctx.arc(x, y, i === 8 ? 5 : 3.5, 0, Math.PI * 2); ctx.fill();
+    });
+  }
+}
+
+/* ---------- robot map ---------- */
+const fetched = new Set();  // objects the robot has picked up: carried or handed to you, not on the floor
+function drawMap(r) {
+  const map = config?.map;
+  if (!map) return;
+  const robot = r?.robot;
+  const holding = robot?.holding_object;
+  if (holding) fetched.add(holding);
+  const proposed = r?.proposed_target;
+  let svg = "";
+  for (let x = 0; x <= 640; x += 80) svg += `<line x1="${x}" y1="0" x2="${x}" y2="600" stroke="#d3dce4" stroke-width="1"/>`;
+  for (let y = 0; y <= 600; y += 80) svg += `<line x1="0" y1="${y}" x2="640" y2="${y}" stroke="#d3dce4" stroke-width="1"/>`;
+  const [dx, dy] = map.dock, [ux, uy] = map.user;
+  svg += `<rect x="${dx - 32}" y="${dy - 32}" width="64" height="64" rx="10" fill="none" stroke="#4a5672" stroke-width="2"/>
+          <text x="${dx}" y="${dy + 54}" text-anchor="middle">dock</text>
+          <circle cx="${ux}" cy="${uy}" r="20" fill="none" stroke="#14213d" stroke-width="2" stroke-dasharray="4 4"/>
+          <text x="${ux}" y="${uy + 42}" text-anchor="middle">you</text>`;
+  for (const [name, [x, y]] of Object.entries(map.objects)) {
+    if (fetched.has(name)) continue;
+    const sel = name === proposed;
+    svg += `<circle cx="${x}" cy="${y}" r="${sel ? 11 : 8}" fill="${sel ? "#0f7173" : "#7b869c"}"/>
+            <text x="${x}" y="${y - 16}" text-anchor="middle">${name}</text>`;
+  }
+  if (robot) {
+    const [rx, ry] = robot.current_position;
+    const stopped = robot.is_stopped;
+    svg += `<circle cx="${rx}" cy="${ry}" r="22" fill="${stopped ? "#d9483b" : "#14213d"}"/>
+            <circle cx="${rx}" cy="${ry}" r="22" fill="none" stroke="#fff" stroke-width="3"/>`;
+    if (holding) svg += `<circle cx="${rx + 16}" cy="${ry - 16}" r="8" fill="#0f7173" stroke="#fff" stroke-width="2"/>`;
+    const what = { IDLE: "waiting", NAVIGATING: "driving to the object", GRASPING: "picking it up",
+      DELIVERING: "bringing it to you", RETURNING: "driving to the dock", EMERGENCY_STOPPED: "stopped" }[robot.state] || robot.state;
+    $("robotLine").textContent = `Robot is ${what}${holding ? `, holding the ${holding}` : ""}. Simulated until a real robot is connected.`;
+  }
+  $("map").innerHTML = svg;
+}
+
+/* ---------- wiring ---------- */
+document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => selectSource(t.dataset.src)));
+$("startBtn").addEventListener("click", () => source === "photo" ? $("photoInput").click() : startWebcam());
+$("photoInput").addEventListener("change", (e) => e.target.files[0] && sendPhoto(e.target.files[0]));
+$("mirror").addEventListener("change", () => $("video").classList.toggle("mirror", $("mirror").checked));
+$("stopBtn").addEventListener("click", async () => {
+  const s = await (await fetch("/stop", { method: "POST" })).json();
+  render({ ...s, hand_detected: false, intent_fired: false, probabilities: {} }, null, false);
+});
+$("resetBtn").addEventListener("click", async () => {
+  await fetch(withToken("/reset"), { method: "POST" });
+  renderCommands([]);
+  fetched.clear();
+  const s = await (await fetch("/state")).json();
+  render({ ...s, hand_detected: false, intent_fired: false, probabilities: {} }, null, false);
+});
+window.addEventListener("resize", () => { if (lastOverlay) drawOverlayFor(lastOverlay); });
+
+loadConfig();
+</script>
+</body>
+</html>

@@ -1,0 +1,172 @@
+# GestureGrasp Intent and State Machine Configuration
+# AUTHORITATIVE SINGLE SOURCE OF TRUTH
+
+version: "1.0"
+
+# min_conf per gesture is chosen on validation users by: python -m src.gesturegrasp.train_v2
+threshold_provenance:
+  source: sweep_result
+  updated_at: "2026-10-13T17:36:13.512975+00:00"
+  note: "Per-intent min_conf written by a real training threshold sweep."
+
+# Mapping from raw gesture class to high-level Intent
+# Actionable intents trigger state transitions or commands.
+# Non-actionable gestures are rejection/filter classes.
+gestures:
+  call:
+    intent: "WAKE"
+    actionable: true
+    min_conf: 0.50
+    hold_time: 0.60
+    description: "Start interaction and transition to LISTENING"
+  point:
+    intent: "SELECT_TARGET"
+    actionable: true
+    min_conf: 0.90
+    hold_time: 0.80
+    description: "Aim pointing ray to select allowable target object"
+  like:
+    intent: "CONFIRM"
+    actionable: true
+    min_conf: 0.80
+    hold_time: 0.70
+    description: "Approve proposed target and trigger robot retrieval"
+  dislike:
+    intent: "REJECT"
+    actionable: true
+    min_conf: 0.50
+    hold_time: 0.70
+    states:
+      - "TARGET_PROPOSED"
+      - "AWAIT_FEEDBACK"
+    description: "Reject a proposed or delivered object and return to LISTENING"
+  stop:
+    intent: "STOP"
+    actionable: true
+    min_conf: 0.50
+    hold_time: 0.25
+    description: "Emergency override stop immediately from any active state"
+  peace:
+    intent: "RETURN_HOME"
+    actionable: true
+    min_conf: 0.50
+    hold_time: 1.00
+    description: "Abort current task and navigate robot back to dock"
+  ok:
+    intent: "ACKNOWLEDGE"
+    actionable: true
+    min_conf: 0.50
+    hold_time: 0.80
+    description: "Acknowledge task completion and return to IDLE"
+  no_gesture:
+    intent: "NONE"
+    actionable: false
+    min_conf: 0.50
+    hold_time: 0.0
+    description: "Background / idle hands / no actionable command"
+  fist:
+    intent: "HARD_NEGATIVE"
+    actionable: false
+    min_conf: 0.50
+    hold_time: 0.0
+    description: "Closed fist hard negative rejection class"
+
+# Extra HaGRID classes used only as training data (annotation landmarks, no images).
+training_data:
+  # Trained as the gesture on the right. An open palm with spread fingers is an easier STOP
+  # for users who cannot hold their fingers together (tremor, stiffness, missing fingers).
+  aliases:
+    palm: stop
+  # Everyday hand poses that must never trigger a command. Trained as no_gesture.
+  hard_negatives:
+    - rock
+    - three
+    - mute
+    - grabbing
+    - grip
+    - little_finger
+    - middle_finger
+    - thumb_index
+  # Cap per source class so the merged no_gesture class does not swamp the others.
+  max_hands_per_source_class: 15000
+  # In-plane rotation augmentation (degrees). Users point in any direction and may show STOP with
+  # the fingers sideways, so gestures keep their meaning at any roll. Only thumbs up / down depend
+  # on direction (up vs down IS the meaning), so they stay near upright.
+  rotation_deg: 180.0
+  oriented_gestures: [like, dislike]
+  oriented_rotation_deg: 20.0
+
+intent_engine:
+  ema_alpha: 0.6
+  margin_threshold: 0.20
+  cooldown_seconds: 1.00
+  max_dropped_frames: 2
+  stop_priority: true
+
+state_machine:
+  initial_state: "IDLE"
+  states:
+    - "IDLE"
+    - "LISTENING"
+    - "TARGET_PROPOSED"
+    - "EXECUTING"
+    - "AWAIT_FEEDBACK"
+    - "RETURNING"
+    - "STOPPED"
+  
+  # State-specific timeouts in seconds (0 = no timeout)
+  timeouts:
+    IDLE: 0
+    LISTENING: 30.0
+    TARGET_PROPOSED: 15.0
+    EXECUTING: 120.0
+    AWAIT_FEEDBACK: 30.0
+    RETURNING: 60.0
+    STOPPED: 0
+
+  # Allowed transitions: current_state -> {intent: next_state}
+  transitions:
+    IDLE:
+      WAKE: "LISTENING"
+    LISTENING:
+      SELECT_TARGET: "TARGET_PROPOSED"
+      RETURN_HOME: "RETURNING"
+      STOP: "STOPPED"
+    TARGET_PROPOSED:
+      CONFIRM: "EXECUTING"
+      REJECT: "LISTENING"
+      SELECT_TARGET: "TARGET_PROPOSED"
+      RETURN_HOME: "RETURNING"
+      STOP: "STOPPED"
+    EXECUTING:
+      TASK_COMPLETE: "AWAIT_FEEDBACK"
+      TASK_FAILED: "LISTENING"
+      RETURN_HOME: "RETURNING"
+      STOP: "STOPPED"
+    AWAIT_FEEDBACK:
+      ACKNOWLEDGE: "IDLE"
+      REJECT: "LISTENING"
+      WAKE: "LISTENING"
+      RETURN_HOME: "RETURNING"
+      STOP: "STOPPED"
+    RETURNING:
+      DOCK_REACHED: "IDLE"
+      STOP: "STOPPED"
+    STOPPED:
+      WAKE: "LISTENING"
+
+pointing:
+  origin_landmark: 5       # Index MCP
+  direction_landmark: 8    # Index Tip
+  max_angular_deviation_deg: 15.0
+  require_target_consistency: true
+  min_target_confidence: 0.40
+  allowed_classes:
+    - "bottle"
+    - "cup"
+    - "cell phone"
+    - "remote"
+    - "book"
+    - "mouse"
+    - "apple"
+    - "banana"

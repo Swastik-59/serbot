@@ -1,0 +1,57 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Testing / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# --- Secrets / local config ---
+.env
+.env.*
+!.env.example
+
+# --- Data (too large for GitHub; re-create with download_dataset.py / train_v2) ---
+data/raw/
+# 125 MB, over GitHub's 100 MB file limit; train_v2 rebuilds it if missing
+data/processed/hagrid_landmarks.parquet
+
+# --- Model weights ---
+# YOLO weights are downloaded automatically on first server start
+yolo11n.pt
+*.pt
+*.pth
+*.onnx
+# The small trained models in models/ ARE committed so the server runs out of the box
+
+# --- Logs ---
+*.log
+logs/
+
+# --- Editors / OS ---
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Claude Code local settings ---
+.claude/settings.local.json

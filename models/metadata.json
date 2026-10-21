@@ -1,0 +1,47 @@
+{
+  "feature_version": "2.0",
+  "feature_dim": 126,
+  "champion_model": "TorchMLP",
+  "classes": [
+    "call",
+    "dislike",
+    "fist",
+    "like",
+    "no_gesture",
+    "ok",
+    "peace",
+    "point",
+    "stop"
+  ],
+  "cv_results": {
+    "LogisticRegression": {
+      "val_macro_f1_annotation": 0.9769,
+      "val_macro_f1_live": 0.927,
+      "selection_score": 0.952,
+      "train_seconds": 56.6,
+      "device": "cpu"
+    },
+    "HistGradientBoosting": {
+      "val_macro_f1_annotation": 0.9843,
+      "val_macro_f1_live": 0.9574,
+      "selection_score": 0.9709,
+      "train_seconds": 31.2,
+      "device": "cpu"
+    },
+    "TorchMLP": {
+      "val_macro_f1_annotation": 0.9869,
+      "val_macro_f1_live": 0.9749,
+      "selection_score": 0.9809,
+      "train_seconds": 85.0,
+      "device": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "epochs_run": 30
+    }
+  },
+  "timestamp": "2026-10-13T17:36:17.691750+00:00",
+  "random_seed": 42,
+  "test_macro_f1": 0.9875,
+  "test_accuracy": 0.9874,
+  "live_test_macro_f1": 0.9785,
+  "stop_recall": 0.9983,
+  "python_version": "3.11.9 (tags/v3.11.9:de54cf5, Apr  2 2024, 10:12:12) [MSC v.1938 64 bit (AMD64)]"
+}

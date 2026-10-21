@@ -1,0 +1,645 @@
+{
+  "feature_version": "2.0",
+  "champion_model": "TorchMLP",
+  "accuracy": 0.9874,
+  "macro_f1": 0.9875,
+  "weighted_f1": 0.9874,
+  "stop_recall": 0.9983,
+  "expected_calibration_error": 0.0019,
+  "average_brier_score": 0.0024,
+  "per_class": {
+    "call": {
+      "precision": 0.9884,
+      "recall": 0.9906,
+      "f1_score": 0.9895,
+      "support": 4131
+    },
+    "dislike": {
+      "precision": 0.9915,
+      "recall": 0.9909,
+      "f1_score": 0.9912,
+      "support": 4934
+    },
+    "fist": {
+      "precision": 0.9822,
+      "recall": 0.9908,
+      "f1_score": 0.9865,
+      "support": 4780
+    },
+    "like": {
+      "precision": 0.9768,
+      "recall": 0.9957,
+      "f1_score": 0.9861,
+      "support": 4858
+    },
+    "no_gesture": {
+      "precision": 0.9949,
+      "recall": 0.9798,
+      "f1_score": 0.9873,
+      "support": 28681
+    },
+    "ok": {
+      "precision": 0.9943,
+      "recall": 0.9978,
+      "f1_score": 0.996,
+      "support": 4927
+    },
+    "peace": {
+      "precision": 0.9937,
+      "recall": 0.9971,
+      "f1_score": 0.9954,
+      "support": 4911
+    },
+    "point": {
+      "precision": 0.9562,
+      "recall": 0.9783,
+      "f1_score": 0.9671,
+      "support": 5018
+    },
+    "stop": {
+      "precision": 0.978,
+      "recall": 0.9983,
+      "f1_score": 0.988,
+      "support": 6890
+    }
+  },
+  "test_rows": 69130,
+  "live_mediapipe_test": {
+    "n": 954,
+    "accuracy": 0.9759,
+    "macro_f1": 0.9785,
+    "weighted_f1": 0.9758,
+    "stop_recall": 0.9898,
+    "expected_calibration_error": 0.0135,
+    "average_brier_score": 0.0048,
+    "per_class": {
+      "call": {
+        "precision": 0.9892,
+        "recall": 1.0,
+        "f1_score": 0.9946,
+        "support": 92
+      },
+      "dislike": {
+        "precision": 1.0,
+        "recall": 0.9468,
+        "f1_score": 0.9727,
+        "support": 94
+      },
+      "fist": {
+        "precision": 0.9792,
+        "recall": 1.0,
+        "f1_score": 0.9895,
+        "support": 94
+      },
+      "like": {
+        "precision": 0.9775,
+        "recall": 1.0,
+        "f1_score": 0.9886,
+        "support": 87
+      },
+      "no_gesture": {
+        "precision": 0.989,
+        "recall": 0.9137,
+        "f1_score": 0.9499,
+        "support": 197
+      },
+      "ok": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "support": 111
+      },
+      "peace": {
+        "precision": 0.9892,
+        "recall": 1.0,
+        "f1_score": 0.9946,
+        "support": 92
+      },
+      "point": {
+        "precision": 0.899,
+        "recall": 1.0,
+        "f1_score": 0.9468,
+        "support": 89
+      },
+      "stop": {
+        "precision": 0.951,
+        "recall": 0.9898,
+        "f1_score": 0.97,
+        "support": 98
+      }
+    }
+  },
+  "age_60_plus_test": {
+    "n": 2209,
+    "accuracy": 0.9864,
+    "macro_f1": 0.9847,
+    "weighted_f1": 0.9865,
+    "stop_recall": 1.0,
+    "expected_calibration_error": 0.0039,
+    "average_brier_score": 0.0025,
+    "per_class": {
+      "call": {
+        "precision": 0.9847,
+        "recall": 0.9699,
+        "f1_score": 0.9773,
+        "support": 133
+      },
+      "dislike": {
+        "precision": 0.9934,
+        "recall": 0.9934,
+        "f1_score": 0.9934,
+        "support": 151
+      },
+      "fist": {
+        "precision": 0.9551,
+        "recall": 1.0,
+        "f1_score": 0.977,
+        "support": 149
+      },
+      "like": {
+        "precision": 0.9684,
+        "recall": 0.9946,
+        "f1_score": 0.9813,
+        "support": 185
+      },
+      "no_gesture": {
+        "precision": 0.9978,
+        "recall": 0.9775,
+        "f1_score": 0.9876,
+        "support": 934
+      },
+      "ok": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "support": 140
+      },
+      "peace": {
+        "precision": 0.9939,
+        "recall": 1.0,
+        "f1_score": 0.9969,
+        "support": 163
+      },
+      "point": {
+        "precision": 0.9318,
+        "recall": 0.9762,
+        "f1_score": 0.9535,
+        "support": 126
+      },
+      "stop": {
+        "precision": 0.9913,
+        "recall": 1.0,
+        "f1_score": 0.9956,
+        "support": 228
+      }
+    }
+  },
+  "age_under_60_test": {
+    "n": 66921,
+    "accuracy": 0.9874,
+    "macro_f1": 0.9875,
+    "weighted_f1": 0.9874,
+    "stop_recall": 0.9982,
+    "expected_calibration_error": 0.0019,
+    "average_brier_score": 0.0024,
+    "per_class": {
+      "call": {
+        "precision": 0.9885,
+        "recall": 0.9912,
+        "f1_score": 0.9899,
+        "support": 3998
+      },
+      "dislike": {
+        "precision": 0.9914,
+        "recall": 0.9908,
+        "f1_score": 0.9911,
+        "support": 4783
+      },
+      "fist": {
+        "precision": 0.9831,
+        "recall": 0.9905,
+        "f1_score": 0.9868,
+        "support": 4631
+      },
+      "like": {
+        "precision": 0.9771,
+        "recall": 0.9957,
+        "f1_score": 0.9863,
+        "support": 4673
+      },
+      "no_gesture": {
+        "precision": 0.9948,
+        "recall": 0.9799,
+        "f1_score": 0.9873,
+        "support": 27747
+      },
+      "ok": {
+        "precision": 0.9942,
+        "recall": 0.9977,
+        "f1_score": 0.9959,
+        "support": 4787
+      },
+      "peace": {
+        "precision": 0.9937,
+        "recall": 0.9971,
+        "f1_score": 0.9954,
+        "support": 4748
+      },
+      "point": {
+        "precision": 0.9568,
+        "recall": 0.9783,
+        "f1_score": 0.9675,
+        "support": 4892
+      },
+      "stop": {
+        "precision": 0.9775,
+        "recall": 0.9982,
+        "f1_score": 0.9877,
+        "support": 6662
+      }
+    }
+  },
+  "candidates": {
+    "LogisticRegression": {
+      "val_macro_f1_annotation": 0.9769,
+      "val_macro_f1_live": 0.927,
+      "selection_score": 0.952,
+      "train_seconds": 56.6,
+      "device": "cpu"
+    },
+    "HistGradientBoosting": {
+      "val_macro_f1_annotation": 0.9843,
+      "val_macro_f1_live": 0.9574,
+      "selection_score": 0.9709,
+      "train_seconds": 31.2,
+      "device": "cpu"
+    },
+    "TorchMLP": {
+      "val_macro_f1_annotation": 0.9869,
+      "val_macro_f1_live": 0.9749,
+      "selection_score": 0.9809,
+      "train_seconds": 85.0,
+      "device": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "epochs_run": 30
+    }
+  },
+  "selected_min_conf": {
+    "call": 0.5,
+    "point": 0.9,
+    "like": 0.8,
+    "dislike": 0.5,
+    "stop": 0.5,
+    "peace": 0.5,
+    "ok": 0.5,
+    "no_gesture": 0.5,
+    "fist": 0.5
+  },
+  "threshold_split": "val_users",
+  "data": {
+    "annotation_rows": 435939,
+    "live_rows": 5911,
+    "users": 40167,
+    "rows_per_split": {
+      "train": 305997,
+      "val": 65769,
+      "test": 70084
+    },
+    "class_counts_train": {
+      "no_gesture": 121854,
+      "stop": 30706,
+      "point": 23961,
+      "peace": 22237,
+      "dislike": 21975,
+      "ok": 21897,
+      "fist": 21809,
+      "like": 21755,
+      "call": 19803
+    }
+  },
+  "rotated_test": {
+    "n": 69130,
+    "accuracy": 0.9877,
+    "macro_f1": 0.9881,
+    "weighted_f1": 0.9877,
+    "stop_recall": 0.9981,
+    "expected_calibration_error": 0.0021,
+    "average_brier_score": 0.0023,
+    "per_class": {
+      "call": {
+        "precision": 0.988,
+        "recall": 0.9927,
+        "f1_score": 0.9903,
+        "support": 4131
+      },
+      "dislike": {
+        "precision": 0.9929,
+        "recall": 0.9901,
+        "f1_score": 0.9915,
+        "support": 4934
+      },
+      "fist": {
+        "precision": 0.9803,
+        "recall": 0.9902,
+        "f1_score": 0.9852,
+        "support": 4780
+      },
+      "like": {
+        "precision": 0.9888,
+        "recall": 0.9955,
+        "f1_score": 0.9921,
+        "support": 4858
+      },
+      "no_gesture": {
+        "precision": 0.9947,
+        "recall": 0.98,
+        "f1_score": 0.9873,
+        "support": 28681
+      },
+      "ok": {
+        "precision": 0.9945,
+        "recall": 0.9976,
+        "f1_score": 0.996,
+        "support": 4927
+      },
+      "peace": {
+        "precision": 0.9937,
+        "recall": 0.9971,
+        "f1_score": 0.9954,
+        "support": 4911
+      },
+      "point": {
+        "precision": 0.9551,
+        "recall": 0.9825,
+        "f1_score": 0.9686,
+        "support": 5018
+      },
+      "stop": {
+        "precision": 0.9755,
+        "recall": 0.9981,
+        "f1_score": 0.9867,
+        "support": 6890
+      }
+    }
+  },
+  "temperature": 0.5598,
+  "training_history": [
+    {
+      "epoch": 1,
+      "loss": 0.8635388272675986,
+      "val_macro_f1": 0.9639463157665819,
+      "seconds": 0.9
+    },
+    {
+      "epoch": 2,
+      "loss": 0.5874337097228549,
+      "val_macro_f1": 0.9592710911741802,
+      "seconds": 2.8
+    },
+    {
+      "epoch": 3,
+      "loss": 0.43361847630873923,
+      "val_macro_f1": 0.9717573019263954,
+      "seconds": 2.7
+    },
+    {
+      "epoch": 4,
+      "loss": 0.41439460060607586,
+      "val_macro_f1": 0.975829426204996,
+      "seconds": 2.7
+    },
+    {
+      "epoch": 5,
+      "loss": 0.40642633260886085,
+      "val_macro_f1": 0.978915147136753,
+      "seconds": 2.8
+    },
+    {
+      "epoch": 6,
+      "loss": 0.4012306575732729,
+      "val_macro_f1": 0.9800502697105237,
+      "seconds": 2.8
+    },
+    {
+      "epoch": 7,
+      "loss": 0.39921728350179037,
+      "val_macro_f1": 0.9810516095615571,
+      "seconds": 2.8
+    },
+    {
+      "epoch": 8,
+      "loss": 0.3971053541803098,
+      "val_macro_f1": 0.9807670308807476,
+      "seconds": 2.8
+    },
+    {
+      "epoch": 9,
+      "loss": 0.39434521546484114,
+      "val_macro_f1": 0.9805343185621275,
+      "seconds": 2.8
+    },
+    {
+      "epoch": 10,
+      "loss": 0.39362460273444827,
+      "val_macro_f1": 0.9837018772659606,
+      "seconds": 2.7
+    },
+    {
+      "epoch": 11,
+      "loss": 0.3919139571794379,
+      "val_macro_f1": 0.9810501518499447,
+      "seconds": 2.8
+    },
+    {
+      "epoch": 12,
+      "loss": 0.3909953130570242,
+      "val_macro_f1": 0.9837881959553365,
+      "seconds": 2.7
+    },
+    {
+      "epoch": 13,
+      "loss": 0.38954938466038724,
+      "val_macro_f1": 0.983601485066315,
+      "seconds": 2.7
+    },
+    {
+      "epoch": 14,
+      "loss": 0.38799667490474665,
+      "val_macro_f1": 0.984507835509447,
+      "seconds": 2.8
+    },
+    {
+      "epoch": 15,
+      "loss": 0.3873451591017594,
+      "val_macro_f1": 0.9849304337150406,
+      "seconds": 2.7
+    },
+    {
+      "epoch": 16,
+      "loss": 0.38594537662171136,
+      "val_macro_f1": 0.9842907849869165,
+      "seconds": 2.8
+    },
+    {
+      "epoch": 17,
+      "loss": 0.3853304917717244,
+      "val_macro_f1": 0.9827367291713437,
+      "seconds": 2.8
+    },
+    {
+      "epoch": 18,
+      "loss": 0.384578800593486,
+      "val_macro_f1": 0.9849321638711425,
+      "seconds": 2.8
+    },
+    {
+      "epoch": 19,
+      "loss": 0.38336179038778834,
+      "val_macro_f1": 0.9849164721280648,
+      "seconds": 2.9
+    },
+    {
+      "epoch": 20,
+      "loss": 0.38325599331778826,
+      "val_macro_f1": 0.9847927426459919,
+      "seconds": 2.8
+    },
+    {
+      "epoch": 21,
+      "loss": 0.38253689200030727,
+      "val_macro_f1": 0.9858785003861925,
+      "seconds": 2.8
+    },
+    {
+      "epoch": 22,
+      "loss": 0.38148034904335193,
+      "val_macro_f1": 0.9860417228697665,
+      "seconds": 2.9
+    },
+    {
+      "epoch": 23,
+      "loss": 0.3804415208309131,
+      "val_macro_f1": 0.9857321781911111,
+      "seconds": 2.9
+    },
+    {
+      "epoch": 24,
+      "loss": 0.3799723330466803,
+      "val_macro_f1": 0.9858838403176097,
+      "seconds": 2.9
+    },
+    {
+      "epoch": 25,
+      "loss": 0.3795115526376751,
+      "val_macro_f1": 0.9860828530176359,
+      "seconds": 2.7
+    },
+    {
+      "epoch": 26,
+      "loss": 0.37873985841319785,
+      "val_macro_f1": 0.9861714031524884,
+      "seconds": 2.8
+    },
+    {
+      "epoch": 27,
+      "loss": 0.3782386584073529,
+      "val_macro_f1": 0.9865843075071147,
+      "seconds": 2.9
+    },
+    {
+      "epoch": 28,
+      "loss": 0.3777466593780925,
+      "val_macro_f1": 0.9866356144037149,
+      "seconds": 2.8
+    },
+    {
+      "epoch": 29,
+      "loss": 0.3773157557740524,
+      "val_macro_f1": 0.986789554873739,
+      "seconds": 2.8
+    },
+    {
+      "epoch": 30,
+      "loss": 0.377315431075638,
+      "val_macro_f1": 0.986746156417435,
+      "seconds": 2.8
+    }
+  ],
+  "latency_ms": {
+    "mean": 0.297,
+    "p50": 0.287,
+    "p95": 0.372
+  },
+  "temporal": {
+    "clip_seconds": 2.0,
+    "fps": 15,
+    "per_gesture": {
+      "call": {
+        "clips": 400,
+        "state": "IDLE",
+        "fired_correctly": 0.9875,
+        "fired_wrong_intent": 0.0,
+        "median_seconds_to_fire": 0.6
+      },
+      "point": {
+        "clips": 400,
+        "state": "LISTENING",
+        "fired_correctly": 0.9525,
+        "fired_wrong_intent": 0.0025,
+        "median_seconds_to_fire": 0.8
+      },
+      "like": {
+        "clips": 400,
+        "state": "TARGET_PROPOSED",
+        "fired_correctly": 0.99,
+        "fired_wrong_intent": 0.0,
+        "median_seconds_to_fire": 0.73
+      },
+      "dislike": {
+        "clips": 400,
+        "state": "TARGET_PROPOSED",
+        "fired_correctly": 0.99,
+        "fired_wrong_intent": 0.0,
+        "median_seconds_to_fire": 0.73
+      },
+      "stop": {
+        "clips": 400,
+        "state": "EXECUTING",
+        "fired_correctly": 0.9975,
+        "fired_wrong_intent": 0.0,
+        "median_seconds_to_fire": 0.27
+      },
+      "peace": {
+        "clips": 400,
+        "state": "LISTENING",
+        "fired_correctly": 0.9975,
+        "fired_wrong_intent": 0.0,
+        "median_seconds_to_fire": 1.0
+      },
+      "ok": {
+        "clips": 400,
+        "state": "AWAIT_FEEDBACK",
+        "fired_correctly": 0.995,
+        "fired_wrong_intent": 0.0025,
+        "median_seconds_to_fire": 0.8
+      }
+    },
+    "false_triggers_per_minute_idle": 0.037,
+    "false_trigger_intents_idle": {
+      "WAKE": 1
+    },
+    "false_triggers_per_minute_listening": 0.075,
+    "false_trigger_intents_listening": {
+      "STOP": 1,
+      "RETURN_HOME": 1
+    },
+    "false_triggers_per_minute_target_proposed": 0.15,
+    "false_trigger_intents_target_proposed": {
+      "REJECT": 2,
+      "STOP": 1,
+      "RETURN_HOME": 1
+    },
+    "negative_clip_minutes": 26.7
+  },
+  "false_triggers_per_minute": 0.075,
+  "total_seconds": 195.6
+}
