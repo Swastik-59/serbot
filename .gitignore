@@ -39,6 +39,8 @@ yolo11n.pt
 *.pt
 *.pth
 *.onnx
+yolo11n_ncnn_model/
+yolo_best.txt
 # The small trained models in models/ ARE committed so the server runs out of the box
 
 # --- Logs ---

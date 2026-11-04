@@ -1,12 +1,20 @@
 """
 Lightweight YOLO Object Detection for GestureGrasp.
-Wraps Ultralytics nano models (default yolo11n.pt / fallback yolov8n.pt).
+Wraps Ultralytics nano models, on the CPU: the system runs on a Raspberry Pi 5, which has no GPU.
+Uses whichever export of yolo11n scripts/export_yolo_pi.py measured as fastest, otherwise yolo11n.pt.
+
+detect() is synchronous. detect_latest() is for the live loop: YOLO runs on its own thread at a few Hz
+and the loop reuses its last answer, because STOP has a 0.25 s hold and must not wait for object boxes.
+
 Includes offline mock mode to avoid mandatory runtime weight downloads during development/testing.
 """
 
 from __future__ import annotations
 
 import logging
+import os
+import threading
+import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 import cv2
@@ -16,24 +24,50 @@ from src.gesturegrasp.pointing import DetectedObject, PointingRay, DEFAULT_ALLOW
 
 logger = logging.getLogger("gesturegrasp.detector")
 
+DEFAULT_MODEL = "yolo11n.pt"
+BEST_MODEL_FILE = "yolo_best.txt"  # written by scripts/export_yolo_pi.py on the machine that will run it
+DEFAULT_IMGSZ = 320
+DEFAULT_RATE_HZ = 3.0
+
+
+def default_model() -> str:
+    best = Path(BEST_MODEL_FILE)
+    if best.exists():
+        name = best.read_text(encoding="utf-8").strip()
+        if name and Path(name).exists():
+            return name
+        logger.warning("%s names '%s', which does not exist; using %s", BEST_MODEL_FILE, name, DEFAULT_MODEL)
+    return DEFAULT_MODEL
+
 
 class ObjectDetector:
     """YOLO Object Detector with graceful fallback and offline mock support."""
 
     def __init__(
         self,
-        model_name: str = "yolo11n.pt",
+        model_name: Optional[str] = None,
         allow_list: Optional[list[str]] = None,
         conf_threshold: float = 0.35,
         use_mock: bool = False,
+        imgsz: int = DEFAULT_IMGSZ,
+        rate_hz: float = DEFAULT_RATE_HZ,
     ):
-        self.model_name = model_name
+        self.model_name = model_name or default_model()
+        self.imgsz = imgsz
+        self.rate_hz = rate_hz
         self.allow_list = set(allow_list or DEFAULT_ALLOWED_OBJECTS)
         self.conf_threshold = conf_threshold
         self.use_mock = use_mock
-        self.active_model_name = "mock" if use_mock else model_name
+        self.active_model_name = "mock" if use_mock else self.model_name
         self._model = None
         self.device = "cpu"
+        self.last_detect_ms = 0.0
+
+        self._worker: Optional[threading.Thread] = None
+        self._worker_cond = threading.Condition()
+        self._pending: Optional[np.ndarray] = None
+        self._latest: tuple[list[DetectedObject], tuple[int, int]] = ([], (0, 0))
+        self._closed = False
 
         if not use_mock:
             self._load_model()
@@ -43,17 +77,16 @@ class ObjectDetector:
         try:
             from ultralytics import YOLO
 
-            weights_path = Path(self.model_name)
-            # Check if file exists locally or if ultralytics can load it
             logger.info(f"Loading YOLO detector: {self.model_name}")
-            self._model = YOLO(self.model_name)
+            self._model = YOLO(self.model_name, task="detect")
             self.active_model_name = self.model_name
             try:
                 import torch
-                self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
+                # Leave cores free for hand tracking: it is what makes STOP fast.
+                torch.set_num_threads(max(1, (os.cpu_count() or 2) // 2))
             except ImportError:
-                self.device = "cpu"
-            logger.info(f"YOLO detector '{self.model_name}' loaded on {self.device}.")
+                pass
+            logger.info(f"YOLO detector '{self.model_name}' loaded, imgsz={self.imgsz}, {self.rate_hz:g} Hz.")
         except Exception as e:
             logger.warning(
                 f"Failed to load YOLO model '{self.model_name}': {e}. "
@@ -61,6 +94,51 @@ class ObjectDetector:
             )
             self.use_mock = True
             self.active_model_name = "mock_fallback"
+
+    def detect_latest(self, frame: np.ndarray) -> list[DetectedObject]:
+        """Hand the frame to the YOLO thread and return its last answer without waiting.
+        Boxes from a different frame size are dropped: their pixel coordinates no longer apply."""
+        if self.use_mock or self._model is None:
+            return self.detect(frame)
+        with self._worker_cond:
+            if self._worker is None:
+                self._closed = False
+                self._worker = threading.Thread(target=self._run_worker, name="yolo", daemon=True)
+                self._worker.start()
+            self._pending = frame  # the newest frame replaces one that was never picked up
+            self._worker_cond.notify()
+            objects, size = self._latest
+        return objects if size == frame.shape[:2] else []
+
+    def close(self) -> None:
+        with self._worker_cond:
+            self._closed = True
+            self._worker_cond.notify_all()
+            worker, self._worker = self._worker, None
+        if worker is not None:
+            worker.join(timeout=5.0)
+
+    def _run_worker(self) -> None:
+        try:
+            os.setpriority(os.PRIO_PROCESS, threading.get_native_id(), 10)  # the gesture loop goes first
+        except (AttributeError, OSError):
+            pass  # Linux only; on other systems it just runs at normal priority
+        interval = 1.0 / self.rate_hz
+        while True:
+            with self._worker_cond:
+                self._worker_cond.wait_for(lambda: self._pending is not None or self._closed)
+                if self._closed:
+                    return
+                frame, self._pending = self._pending, None
+            started = time.perf_counter()
+            objects = self.detect(frame)
+            elapsed = time.perf_counter() - started
+            self.last_detect_ms = elapsed * 1000.0
+            with self._worker_cond:
+                self._latest = (objects, frame.shape[:2])
+                self._worker_cond.wait_for(lambda: self._closed, timeout=max(0.0, interval - elapsed))
+                if self._closed:
+                    return
 
     def detect(self, frame: np.ndarray) -> list[DetectedObject]:
         """Detect allow-listed objects in the RGB/BGR frame."""
@@ -93,7 +171,7 @@ class ObjectDetector:
         # Real YOLO inference
         try:
             results = self._model(frame, conf=self.conf_threshold, verbose=False,
-                                  device=self.device, half=self.device != "cpu")
+                                  device=self.device, imgsz=self.imgsz)
             detected = []
             for r in results:
                 boxes = r.boxes
@@ -101,7 +179,7 @@ class ObjectDetector:
                     continue
                 for box in boxes:
                     cls_id = int(box.cls[0])
-                    label = self._model.names.get(cls_id, str(cls_id)).lower()
+                    label = r.names.get(cls_id, str(cls_id)).lower()
                     conf = float(box.conf[0])
 
                     if label in self.allow_list and conf >= self.conf_threshold:

@@ -2,6 +2,8 @@
 Core GestureGrasp Pipeline API. Completely decoupled from Streamlit.
 
     process(frame)  = perceive (MediaPipe hand + YOLO objects)  ->  decide(...)  ->  draw
+                      With live=True the YOLO boxes come from its own thread and may be a few
+                      frames old, so the gesture loop never waits for them.
     decide(...)     = classifier -> IntentEngine -> pointing/target -> FSM -> robot
 
 decide() takes landmarks and detections directly, so tests can drive the decision logic without
@@ -27,6 +29,7 @@ from src.gesturegrasp.detector import ObjectDetector
 from src.gesturegrasp.features import FEATURE_VERSION_2D, extract_features_2d
 from src.gesturegrasp.intent_engine import IntentEngine
 from src.gesturegrasp.mediapipe_extractor import MediaPipeHandExtractor
+from src.gesturegrasp.numpy_mlp import load_numpy_model
 from src.gesturegrasp.pointing import DetectedObject, PointingEngine, PointingRay
 from src.gesturegrasp.state_machine import GestureStateMachine
 
@@ -89,9 +92,13 @@ class GesturePipeline:
         config_path: Optional[Path] = None,
         robot: Optional[BaseRobot] = None,
         use_mock_detector: bool = False,
+        max_hands: int = 2,
     ):
         self.config_path = config_path or Path("configs/intents.yaml")
-        self.hand_extractor = MediaPipeHandExtractor(static_image_mode=False)
+        # 2 lets a resting hand sit in view without hiding the command (DEC-013), but MediaPipe then runs
+        # its palm detector on every frame, about twice the cost. 1 is the speed option for a slow Pi.
+        self.max_hands = max_hands
+        self.hand_extractor = MediaPipeHandExtractor(static_image_mode=False, max_num_hands=max_hands)
         self.detector = ObjectDetector(use_mock=use_mock_detector)
         self.intent_engine = IntentEngine(self.config_path)
         self._now: Optional[float] = None
@@ -123,10 +130,15 @@ class GesturePipeline:
         if self.feature_version != FEATURE_VERSION_2D:
             raise ValueError(f"{m_path} uses feature set {self.feature_version}; this code needs "
                              f"{FEATURE_VERSION_2D}. Retrain with: python -m src.gesturegrasp.train_v2")
-        # joblib unpickles: only load models/ files this project's own training wrote.
-        self.model = joblib.load(m_path)
-        self.scaler = joblib.load(s_path)
-        logger.info("Loaded gesture model %s (feature set %s)", m_path, self.feature_version)
+        exported = load_numpy_model(m_path.parent / "mlp_weights.npz", m_path, s_path)
+        if exported is not None:
+            self.model, self.scaler = exported  # same weights, no torch or scikit-learn needed
+        else:
+            # joblib unpickles: only load models/ files this project's own training wrote.
+            self.model = joblib.load(m_path)
+            self.scaler = joblib.load(s_path)
+        logger.info("Loaded gesture model %s as %s (feature set %s)",
+                    m_path, type(self.model).__name__, self.feature_version)
 
     def predict_probabilities(self, landmarks: np.ndarray, frame_shape: tuple[int, int]) -> dict[str, float]:
         """Class probabilities for one hand. landmarks: (21, 2|3) MediaPipe-normalised."""
@@ -137,8 +149,8 @@ class GesturePipeline:
 
     # -- per-frame API --------------------------------------------------------------------------
     def process(self, frame_bgr: np.ndarray, timestamp: Optional[float] = None,
-                draw_annotations: bool = True) -> PipelineResult:
-        """Camera frame in, full result out."""
+                draw_annotations: bool = True, live: bool = False) -> PipelineResult:
+        """Camera frame in, full result out. live=True never waits for YOLO; use it on a stream."""
         t_start = time.perf_counter()
         now = time.time() if timestamp is None else timestamp
         if not _is_bgr_frame(frame_bgr):
@@ -146,7 +158,7 @@ class GesturePipeline:
             return self._empty_result(t_start)
 
         hands = self.hand_extractor.process_frame(frame_bgr)
-        objects = self.detector.detect(frame_bgr)
+        objects = self.detector.detect_latest(frame_bgr) if live else self.detector.detect(frame_bgr)
         hand = self._commanding_hand(hands, frame_bgr.shape[:2])
         result = self.decide(
             landmarks=hand.landmarks if hand else None,
@@ -295,7 +307,7 @@ class GesturePipeline:
         self.pointing_engine.tracker.reset()
         # MediaPipe in tracking mode carries the last hand ROI forward; a fresh tracker forgets it.
         self.hand_extractor.close()
-        self.hand_extractor = MediaPipeHandExtractor(static_image_mode=False)
+        self.hand_extractor = MediaPipeHandExtractor(static_image_mode=False, max_num_hands=self.max_hands)
         self.robot.reset()
         self._task_dispatched = False
         self._return_dispatched = False

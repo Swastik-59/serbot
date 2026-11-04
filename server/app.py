@@ -31,6 +31,7 @@ Config (environment variables, or the flags of `python -m server`):
     SERBOT_QUALITY             ESP32 JPEG quality, lower is better (10-63).
     SERBOT_FLIP                none, h, v or both.
     SERBOT_SPEAK               "1" speaks prompts on the Pi through espeak-ng.
+    SERBOT_MAX_HANDS           2 (default) or 1. 1 is about twice as fast, but a second hand can hide the command.
     SERBOT_TOKEN               If set, clients must send it as ?token=... or header X-Token.
     SERBOT_MOCK_DETECTOR       "1" uses fixed fake objects instead of YOLO (no weights needed).
 
@@ -114,10 +115,10 @@ class InferenceService:
         self._frame_count = 0
         self._commands: list[dict[str, Any]] = []  # fired commands, newest last (kept short)
 
-    def process(self, frame: np.ndarray, timestamp: Optional[float] = None,
-                frame_id: Optional[int] = None) -> dict[str, Any]:
+    def process(self, frame: np.ndarray, timestamp: Optional[float] = None, frame_id: Optional[int] = None,
+                live: bool = False) -> dict[str, Any]:
         with self._lock:
-            result = self.pipeline.process(frame, timestamp=timestamp)
+            result = self.pipeline.process(frame, timestamp=timestamp, live=live)
             self._frame_count += 1
             if result.annotated_frame is not None:
                 ok, buf = cv2.imencode(".jpg", result.annotated_frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
@@ -258,7 +259,8 @@ def create_app(pipeline: Optional[GesturePipeline] = None, camera: Optional[Came
         if pipeline is None:
             mock = _env_flag("SERBOT_MOCK_DETECTOR")
             logger.info("Loading GesturePipeline (mock detector=%s)...", mock)
-            svc = InferenceService(GesturePipeline(use_mock_detector=mock), speaker)
+            max_hands = int(os.environ.get("SERBOT_MAX_HANDS") or 2)
+            svc = InferenceService(GesturePipeline(use_mock_detector=mock, max_hands=max_hands), speaker)
             source = camera or _camera_from_env()
         else:
             svc = InferenceService(pipeline, speaker)
@@ -268,7 +270,7 @@ def create_app(pipeline: Optional[GesturePipeline] = None, camera: Optional[Came
         app.state.loop = None
         if source is not None:
             source.start()
-            app.state.loop = CameraLoop(source, lambda frame, stamp, frame_id: svc.process(frame, stamp, frame_id),
+            app.state.loop = CameraLoop(source, lambda frame, stamp, frame_id: svc.process(frame, stamp, frame_id, live=True),
                                         paused=lambda: svc.dev_streams > 0).start()
         logger.info("Server ready.")
         yield
@@ -277,6 +279,7 @@ def create_app(pipeline: Optional[GesturePipeline] = None, camera: Optional[Came
         if source is not None:
             source.stop()
         svc.close()
+        svc.pipeline.detector.close()
         svc.pipeline.hand_extractor.close()
 
     app = FastAPI(title="GestureGrasp Server", lifespan=lifespan)
@@ -390,7 +393,7 @@ def create_app(pipeline: Optional[GesturePipeline] = None, camera: Optional[Came
                 if frame is None:
                     await ws.send_json({"error": "undecodable frame"})
                     continue
-                result = await run_in_threadpool(svc.process, frame)
+                result = await run_in_threadpool(svc.process, frame, None, None, True)
                 await ws.send_json(result)
         except WebSocketDisconnect:
             logger.info("Development stream disconnected: %s", client)

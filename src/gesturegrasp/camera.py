@@ -129,6 +129,7 @@ class CameraSource:
         self._state = CONNECTING
         self.frames_received = 0
         self.decode_errors = 0
+        self.decode_ms = 0.0
         self.last_error: Optional[str] = None
 
     # -- lifecycle ------------------------------------------------------------------------------
@@ -182,7 +183,10 @@ class CameraSource:
             payload, frame_id, stamp = self._payload, self._frame_id, self._timestamp
         if payload is None:
             return None
+        started = time.perf_counter()
         frame = payload if isinstance(payload, np.ndarray) else _decode_jpeg(payload)
+        if not isinstance(payload, np.ndarray):
+            self.decode_ms = (time.perf_counter() - started) * 1000.0
         if frame is None:
             with self._cond:
                 self.decode_errors += 1

@@ -43,6 +43,8 @@ def build_parser() -> argparse.ArgumentParser:
                         help="h = mirror, v = upside down, both = rotated 180 degrees")
     parser.add_argument("--speak", action="store_true", default=env("SERBOT_SPEAK", "") == "1",
                         help="Speak prompts on the Pi through espeak-ng")
+    parser.add_argument("--max-hands", type=int, choices=(1, 2), default=int(env("SERBOT_MAX_HANDS", "2")),
+                        help="1 is about twice as fast, but a second hand in view can hide the command")
     parser.add_argument("--token", help="Shared secret for /reset, /infer and /ws/stream (or set SERBOT_TOKEN)")
     parser.add_argument("--mock-detector", action="store_true", help="Fake objects instead of YOLO")
     return parser
@@ -55,6 +57,7 @@ def main() -> None:
     os.environ["SERBOT_QUALITY"] = str(args.quality)
     os.environ["SERBOT_FLIP"] = args.flip
     os.environ["SERBOT_SPEAK"] = "1" if args.speak else "0"
+    os.environ["SERBOT_MAX_HANDS"] = str(args.max_hands)
     if args.camera_control_url:
         os.environ["SERBOT_CAMERA_CONTROL_URL"] = args.camera_control_url
     if args.mock_detector:
