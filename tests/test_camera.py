@@ -150,6 +150,16 @@ def test_state_goes_connecting_streaming_lost_streaming(fake_cam):
         source.stop()
 
 
+def test_connecting_is_logged_for_the_journal(fake_cam, caplog):
+    caplog.set_level("INFO", logger="gesturegrasp.camera")
+    source = quick_source(fake_cam).start()
+    try:
+        assert wait_until(lambda: source.status()["state"] == STREAMING)
+    finally:
+        source.stop()
+    assert "Camera connecting -> streaming" in caplog.text
+
+
 def test_a_stalled_stream_is_treated_as_lost(fake_cam):
     source = quick_source(fake_cam, capture_after_failures=99).start()
     try:

@@ -8,11 +8,11 @@
 
 <p>
   <img alt="Python" src="https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white">
-  <img alt="PyTorch" src="https://img.shields.io/badge/PyTorch-CUDA-EE4C2C?logo=pytorch&logoColor=white">
-  <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-WebSocket-009688?logo=fastapi&logoColor=white">
+  <img alt="Raspberry Pi 5" src="https://img.shields.io/badge/Raspberry%20Pi-5-A22846?logo=raspberrypi&logoColor=white">
+  <img alt="ESP32-CAM" src="https://img.shields.io/badge/ESP32--CAM-OV2640-E7352C?logo=espressif&logoColor=white">
+  <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-web%20page-009688?logo=fastapi&logoColor=white">
   <img alt="MediaPipe" src="https://img.shields.io/badge/MediaPipe-Hands-0097A7?logo=google&logoColor=white">
   <img alt="YOLO11" src="https://img.shields.io/badge/YOLO11n-Ultralytics-111F68">
-  <img alt="Raspberry Pi" src="https://img.shields.io/badge/Raspberry%20Pi-4%20%7C%205-A22846?logo=raspberrypi&logoColor=white">
 </p>
 
 <p>
@@ -22,7 +22,7 @@
   <img alt="False commands" src="https://img.shields.io/badge/false%20commands-0.04%2Fmin-2ea44f">
 </p>
 
-[Quick start](#-quick-start) · [Gestures](#-the-gestures) · [Playground](#-the-playground) · [How it works](#-how-it-works) · [Results](#-results) · [Hardware](#-hardware) · [Docs](#-documentation)
+[Quick start](#-quick-start) · [Gestures](#-the-gestures) · [The web page](#-the-web-page) · [How it works](#-how-it-works) · [Results](#-results) · [Hardware](#-hardware) · [Docs](#-documentation)
 
 </div>
 
@@ -46,25 +46,26 @@ them ask for an object with a few simple, forgiving hand signs. No wearable, no 
 
 ## 🧭 How it works
 
-A **Raspberry Pi** with a camera streams video to a **laptop server**. The laptop runs the gesture model
-on the GPU and sends back the system's state and a prompt, which the Pi prints and can speak aloud.
-The Pi does no AI work, so any Pi 4 or Pi 5 is enough.
+Two devices do everything: an **AI-Thinker ESP32-CAM** and a **Raspberry Pi 5**. The ESP32-CAM streams
+video over Wi-Fi. The Pi runs the whole pipeline on its CPU and serves a web page that any phone or
+computer on the network can open. A GPU PC is only needed to retrain the model.
 
 <p align="center">
   <img src="architecture.png" alt="GestureGrasp system architecture" width="720">
 </p>
 
 ```
-Pi camera ─► pi_client ──JPEG over WebSocket──► server: hands → model → intent → pointing/YOLO → state machine → robot
-             speaks prompt ◄─────── JSON ───────
+ESP32-CAM ──MJPEG over Wi-Fi──► Raspberry Pi 5: capture → hands → model → intent → pointing/YOLO → state machine → robot
+                                     └──► http://<pi>:8000/ on any browser
 ```
 
 | Stage | What it does |
 |---|---|
+| **Capture** | A background thread reads the MJPEG stream and keeps only the newest frame, so a slow pipeline skips frames instead of acting on old ones. Reconnects by itself |
 | **Hand landmarks** | MediaPipe Hands finds 21 points per hand |
-| **Gesture classifier** | 126 features (positions, bend angles, fingertip distances, roll) → GPU-trained MLP (126 → 512 → 256 → 128 → 9), temperature-calibrated, ~0.3 ms per hand |
+| **Gesture classifier** | 126 features (positions, bend angles, fingertip distances, roll) → MLP (126 → 512 → 256 → 128 → 9), temperature-calibrated, running in NumPy |
 | **Intent engine** | Smooths confidence over frames, needs a full hold before a command fires, STOP has priority |
-| **Pointing + YOLO** | A ray along the index finger picks the nearest allowed object within 15°, voted over the hold |
+| **Pointing + YOLO** | YOLO11n runs on its own thread at 3 Hz, so the gesture loop never waits for it. A ray along the index finger picks the nearest allowed object within 15°, voted over the hold |
 | **State machine** | `IDLE → LISTENING → TARGET_PROPOSED → EXECUTING → AWAIT_FEEDBACK`, plus `RETURNING` and `STOPPED`. Only accepts commands that make sense in the current step |
 | **Robot** | `BaseRobot` interface. A simulated robot drives, grasps and delivers until real hardware is connected |
 
@@ -105,75 +106,71 @@ Full details, reliability per gesture and tips for users: **[GESTURES.md](GESTUR
 
 ## 🚀 Quick start
 
-### Laptop (server)
+### 1. Flash the ESP32-CAM
 
-Tested on Windows 11, Python 3.11, NVIDIA RTX 4060.
+Put your Wi-Fi details in [`esp32_cam/config.h`](esp32_cam/config.h) and flash
+[`esp32_cam/esp32_cam.ino`](esp32_cam/esp32_cam.ino). Full steps: **[esp32_cam/README.md](esp32_cam/README.md)**.
+
+### 2. Set up the Raspberry Pi 5
+
+Raspberry Pi OS **Bookworm 64-bit** (Python 3.11).
 
 ```bash
-# 1. GPU build of PyTorch first (skip on machines without an NVIDIA GPU)
-pip install torch==2.14.0 torchvision==0.29.0 --index-url https://download.pytorch.org/whl/cu130
-
-# 2. Everything else
-pip install -r requirements.txt
-
-# 3. Start the server
-python -m server
+sudo apt install -y python3-venv espeak-ng libgl1 libglib2.0-0 libportaudio2 avahi-daemon libnss-mdns
+git clone https://github.com/Swastik-59/serbot.git && cd serbot
+python3 -m venv .venv && source .venv/bin/activate
+pip install --extra-index-url https://download.pytorch.org/whl/cpu -r requirements-pi.txt
+python scripts/export_yolo_pi.py       # once, online: picks the fastest YOLO backend for this Pi
 ```
 
-Then open **http://localhost:8000/playground**. The first start downloads the YOLO weights
-(`yolo11n.pt`, ~5 MB) once.
+### 3. Run it
+
+```bash
+python -m server --camera-url http://esp32cam.local:81/stream
+```
+
+Then open **http://\<pi-ip\>:8000/** on any device on the same network.
 
 <details>
 <summary><b>Server options</b></summary>
 
 ```bash
-python -m server --token mysecret      # require a shared secret from the Pi (recommended)
-python -m server --mock-detector       # fixed fake objects instead of YOLO (no real objects needed)
-python -m server --port 9000           # another port
+python -m server --camera-url http://192.168.1.50:81/stream   # use the IP if .local does not resolve
+python -m server --speak                                      # speak prompts on the Pi
+python -m server --flip both                                  # camera mounted upside down (h, v, both)
+python -m server --token mysecret                             # require a secret for /reset, /infer, /ws/stream
+python -m server --mock-detector                              # fixed fake objects instead of YOLO
+python -m server --source clip.mp4                            # a video file or image instead of the camera
+python -m server --max-hands 1                                # about twice as fast; see GUIDE.md section 2.6
 ```
+
+Every flag has a `SERBOT_*` environment variable. To start on boot, use
+[`deploy/gesturegrasp.service`](deploy/gesturegrasp.service) (GUIDE.md section 3).
 
 </details>
 
-### Raspberry Pi (camera client)
-
-Copy the `pi_client/` folder to the Pi, then:
-
-```bash
-sudo apt install -y python3-venv python3-picamera2 espeak-ng
-python3 -m venv --system-site-packages venv && source venv/bin/activate
-pip install -r requirements.txt
-python client.py --server ws://<laptop-ip>:8000/ws/stream --speak
-```
-
-```
->>> [IDLE] Show the call-me sign to start.
-call        1.00 hold 60%  | 54 ms
->>> [LISTENING] Point at the object you want.
-```
-
-To start the client on boot, use the systemd unit in
-[`pi_client/gesturegrasp-client.service`](pi_client/gesturegrasp-client.service) (see GUIDE.md §3.5).
-
-> **No Pi?** The playground can use the laptop's webcam, so you can try the whole system on the laptop alone.
+> **No hardware?** On any PC: `python -m server --source some_photo.jpg --mock-detector`, then open
+> http://localhost:8000/. The webcam tab also works there.
 
 ---
 
-## 🎮 The playground
+## 🎮 The web page
 
-`http://localhost:8000/playground` is an interactive demo that runs every frame through the same model
-and decision logic the Pi uses. It explains, in plain words, what the model reads from your hand:
-*"You're pointing at the **bottle**."*
+`http://<pi>:8000/` shows the annotated video from the ESP32-CAM and explains, in plain words, what the
+model reads from your hand: *"You're pointing at the **bottle**."* It works on a phone.
 
 | Panel | Shows |
 |---|---|
 | **The sentence** | A plain-language reading of your hand, a hold bar and a "Sent ✓" badge when a command fires |
+| **Camera badge** | Connected or lost, frames per second, frame age, Wi-Fi signal |
 | **What the model sees** | Confidence for all 9 classes, with the threshold each gesture needs |
 | **Decision** | Confidence vs. required, lead over the runner-up, hold time, and why it did or didn't fire |
 | **Pointing & objects** | The target, how far off-centre, how steady, and every detected object |
-| **Speed** | Server time, round trip, frames per second |
+| **Speed** | Server time, camera-to-result time, frames per second |
 | **The robot** | Task step by step, a top-down map of the robot moving, and the command log |
 
-Sources: **your webcam**, **the Raspberry Pi camera**, or **an uploaded photo**.
+The sources are **ESP32-CAM (via Pi)**, the default, plus **your webcam** and **an uploaded photo** for
+development. *Speak prompts here* reads each prompt aloud in the browser.
 
 ---
 
@@ -181,20 +178,22 @@ Sources: **your webcam**, **the Raspberry Pi camera**, or **an uploaded photo**.
 
 | Endpoint | Purpose |
 |---|---|
-| `WS /ws/stream` | Pi sends JPEG frames, server replies with one JSON result per frame (lock-step, no stale frames) |
+| `GET /` · `/playground` | The web page |
+| `GET /viewer` | Minimal page for old devices: video, state, STOP |
+| `GET /video` | MJPEG stream of annotated frames |
+| `GET /camera` | Camera state, fps, frame age, ESP32 status, loop speed |
 | `POST /stop` | 🛑 Emergency stop. Never needs a token |
 | `POST /reset` | Back to IDLE, robot docked |
-| `POST /infer` | One JPEG in, the same JSON out (handy with `curl`) |
-| `GET /health` · `/state` · `/config` · `/latest` | Model/device info, current state, configuration, last result |
-| `GET /` · `/video` · `/playground` | Browser viewer with a STOP button, MJPEG stream, demo page |
+| `GET /health` · `/state` · `/config` · `/latest` | Model info, current state, configuration, last result |
+| `POST /infer` · `WS /ws/stream` | Optional development endpoints: send your own frames |
 
 ```bash
-curl http://localhost:8000/health
-curl -X POST --data-binary @hand.jpg http://localhost:8000/infer
-curl -X POST http://localhost:8000/stop
+curl http://<pi>:8000/health
+curl http://<pi>:8000/camera
+curl -X POST http://<pi>:8000/stop
 ```
 
-The full message format is in [GUIDE.md §4](GUIDE.md#4-how-the-pi-and-the-server-talk).
+The full message format is in [GUIDE.md section 4](GUIDE.md#4-endpoints-and-messages).
 
 ---
 
@@ -224,14 +223,26 @@ out of training** (`reports/evaluation_report.json`).
 
 </details>
 
-### Retrain
+### Speed
 
-Only needed when you change gestures, thresholds or training data (~3 minutes on an RTX 4060):
+The targets on the Pi 5 are **at least 10 fps** at 640x480 and **under 250 ms** from camera to state.
+These have **not been measured on a Pi yet**. Measure yours:
 
 ```bash
+python scripts/benchmark.py --source http://esp32cam.local:81/stream
+```
+
+### Retrain
+
+Only needed when you change gestures, thresholds or training data, and only on a GPU PC (~3 minutes on an
+RTX 4060). See [GUIDE.md section 5.3](GUIDE.md#53-retrain).
+
+```bash
+pip install -r requirements-dev.txt     # after the GPU build of PyTorch
 python download_dataset.py --check      # see what is missing
 python download_dataset.py              # fetch annotations (capped at 10 GB)
 python -m src.gesturegrasp.train_v2     # build features, train on GPU, evaluate, save to models/
+python scripts/export_mlp_numpy.py      # refresh the NumPy copy of the model
 pytest -q                               # run the tests
 ```
 
@@ -243,26 +254,29 @@ pytest -q                               # run the tests
   <img src="pin_diagram.png" alt="GestureGrasp hardware pin diagram" width="720">
 </p>
 
-An ESP32-CAM or Pi camera feeds the Raspberry Pi, the Pi talks to the laptop over Wi-Fi, and the
-SerBot robot receives commands through the `BaseRobot` interface. To plug in a real robot, implement
-`robot.base.BaseRobot` and pass it to `GesturePipeline(robot=...)` in `server/app.py`
-(GUIDE.md §6).
+The ESP32-CAM needs only a stable 5 V supply, because video travels over Wi-Fi. It can share a 2.4 GHz
+network with the Pi, or the Pi can be its own hotspot (GUIDE.md section 3.4). To plug in a real robot,
+implement `robot.base.BaseRobot` and pass it to `GesturePipeline(robot=...)` in `server/app.py`
+(GUIDE.md section 6).
 
 ---
 
 ## 📁 Project layout
 
 ```
-server/                 FastAPI server (python -m server); static/playground.html is the demo page
-pi_client/              Raspberry Pi camera client + systemd autostart unit
+esp32_cam/              ESP32-CAM firmware, config.h and flashing guide
+server/                 FastAPI server (python -m server), processing loop, speech, the web page
 src/gesturegrasp/
+  camera.py             ESP32-CAM stream reader, plus video file and image sources
   pipeline.py           frame → decision: hands, model, intent, pointing, state machine, robot
-  mediapipe_extractor.py, features.py, torch_mlp.py     landmarks → features → classifier
+  mediapipe_extractor.py, features.py, numpy_mlp.py     landmarks → features → classifier
   intent_engine.py, state_machine.py, pointing.py, detector.py
-  hagrid_landmarks.py, train_v2.py                       training data + GPU training
+  torch_mlp.py, hagrid_landmarks.py, train_v2.py        training, on a GPU PC
 robot/                  robot interface + simulated robot
 configs/intents.yaml    gestures, hold times, thresholds, states, objects
-models/                 trained model (calibrated MLP, scaler, metadata)
+models/                 trained model (calibrated MLP, scaler, metadata, NumPy export)
+scripts/                benchmark, YOLO and MLP exports, diagram generator
+deploy/                 systemd unit for the Pi
 reports/                evaluation results
 download_dataset.py     fetches HaGRID training annotations
 tests/                  pytest -q
@@ -274,7 +288,8 @@ tests/                  pytest -q
 
 | Doc | What's inside |
 |---|---|
-| **[GUIDE.md](GUIDE.md)** | Full setup and operation: laptop server, Raspberry Pi client, protocol, model, retraining, tuning, troubleshooting |
+| **[GUIDE.md](GUIDE.md)** | Full setup and operation: Pi, hotspot, messages, model, retraining, tuning, troubleshooting |
+| **[esp32_cam/README.md](esp32_cam/README.md)** | Flashing and testing the camera |
 | **[GESTURES.md](GESTURES.md)** | The 7 gestures, what each does, reliability, timeouts, tips for users |
 | **[DECISIONS.md](DECISIONS.md)** | Why things are built the way they are |
 
@@ -288,6 +303,8 @@ tests/                  pytest -q
 - 📐 **2D pointing.** Objects in the same line of sight can't be told apart (the nearer one is
   proposed), which is why every target needs a thumbs up before the robot moves.
 - 📷 **Lighting and distance matter.** Best with the whole hand in view, 0.5–2 m from the camera.
+- 🔬 **Hardware check pending.** The firmware, Pi wheels and real fps still need a run on real hardware:
+  see the smoke-test checklist in GUIDE.md section 8.
 
 ---
 

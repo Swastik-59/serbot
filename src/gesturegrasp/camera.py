@@ -162,6 +162,8 @@ class CameraSource:
             self._decoded = None
             self.frames_received += arrivals
             self._arrivals.extend([now] * arrivals)
+            if self._state != STREAMING:
+                logger.info("Camera %s -> %s", self._state, STREAMING)
             self._state = STREAMING
             self._cond.notify_all()
 

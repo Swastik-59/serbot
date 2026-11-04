@@ -1,28 +1,30 @@
-# GestureGrasp guide: Raspberry Pi camera + laptop server + model
+# GestureGrasp guide: ESP32-CAM + Raspberry Pi 5 + web page
 
-This guide takes you from nothing to a working system. A Raspberry Pi with a camera streams video to a
-laptop, the laptop runs the gesture model, and the result (a spoken prompt and the robot's state) comes
-back to the Pi. For the gestures themselves, see [GESTURES.md](GESTURES.md).
+This guide takes you from nothing to a working system. An ESP32-CAM streams video over Wi-Fi to a
+Raspberry Pi 5. The Pi runs the whole pipeline and serves a web page, which any phone or computer on the
+network can open. For the gestures themselves, see [GESTURES.md](GESTURES.md).
 
 ```
- Raspberry Pi                                   Laptop (NVIDIA GPU)
- ────────────                                   ───────────────────
- camera ─► pi_client/client.py  ──JPEG frames──►  server (FastAPI, port 8000)
-           prints / speaks prompt ◄──JSON result──   MediaPipe hands → gesture model (GPU-trained MLP)
-                                                     → IntentEngine (hold, smoothing) → pointing + YOLO
-                                                     → state machine → robot (simulated for now)
+ ESP32-CAM                     Raspberry Pi 5                                Any browser
+ ─────────                     ──────────────                                ───────────
+ OV2640 ──MJPEG over Wi-Fi──►  capture thread (newest frame only)
+                               → MediaPipe hands → gesture model
+                               → IntentEngine (hold, smoothing)
+                               → pointing + YOLO (its own thread)
+                               → state machine → robot (simulated for now)
+                               → web server, port 8000  ──────────────────►  http://<pi>:8000/
 ```
 
-The Pi does no AI work. It only captures, compresses and sends frames, so any Pi 4 or Pi 5 is enough.
+The ESP32-CAM serves one client, so the Pi must be the only consumer of its stream. Browsers watch the
+Pi's `/video`, never the ESP32 directly.
 
-**Just want to see it work?** No Pi needed. On the laptop:
+**Just want to see it work?** No hardware needed. On any PC with the requirements installed:
 
 ```bash
-pip install -r requirements.txt     # (GPU users: install PyTorch first, see 2.1)
-python -m server
+python -m server --source some_photo.jpg --mock-detector
 ```
 
-Then open **http://localhost:8000/playground**, click **Turn on webcam** and show your hand (2.6).
+Then open **http://localhost:8000/**. The webcam tab also works there (2.5).
 
 ---
 
@@ -30,226 +32,276 @@ Then open **http://localhost:8000/playground**, click **Turn on webcam** and sho
 
 | Path | What it is |
 |---|---|
-| `server/` | FastAPI server: `python -m server`. WebSocket for the Pi, REST endpoints, browser viewer |
-| `server/static/playground.html` | The playground demo page (2.6), a single self-contained file |
-| `pi_client/` | Everything the Pi needs: `client.py`, `requirements.txt`, autostart service file |
+| `esp32_cam/` | Firmware, `config.h` and the flashing guide |
+| `server/` | FastAPI server: `python -m server`. Processing loop, speech, REST endpoints |
+| `server/static/playground.html` | The web page, a single self-contained file |
+| `src/gesturegrasp/camera.py` | Reads the ESP32-CAM stream; also video files and images for testing |
 | `src/gesturegrasp/pipeline.py` | One frame in, one decision out: hands → model → intent → pointing → state machine → robot |
 | `src/gesturegrasp/` (others) | Hand tracking, features, intent engine, state machine, pointing, YOLO, training |
-| `models/` | The trained model: `calibrated_model.joblib`, `scaler.joblib`, `metadata.json` |
+| `models/` | The trained model: `calibrated_model.joblib`, `scaler.joblib`, `metadata.json`, and `mlp_weights.npz` (the same model for NumPy) |
 | `configs/intents.yaml` | Single source of truth: gestures, hold times, thresholds, states, objects |
 | `robot/` | Robot interface (`base.py`) and the simulated robot used until real hardware exists |
-| `download_dataset.py` | Fetches HaGRID training annotations (only needed to retrain) |
+| `scripts/` | `benchmark.py`, `export_yolo_pi.py`, `export_mlp_numpy.py`, `draw_diagrams.py` |
+| `deploy/gesturegrasp.service` | Starts the server when the Pi boots |
+| `requirements-pi.txt` | Everything the Pi needs |
+| `requirements-dev.txt` | GPU PC: training and `download_dataset.py` only |
 | `reports/` | Latest evaluation numbers from training |
-| `tests/` | `pytest -q` |
+| `tests/` | `pytest -q`. `tests/fake_esp32.py` is a stand-in for the camera |
 
 ---
 
-## 2. Laptop: install and start the server
+## 2. Raspberry Pi 5: install and start
 
-Tested on Windows 11, Python 3.11, RTX 4060. Run everything from the project root.
+Flash the camera first: [esp32_cam/README.md](esp32_cam/README.md). Keep its IP address handy.
 
 ### 2.1 Install
 
-```bash
-# 1. GPU build of PyTorch FIRST (otherwise ultralytics pulls in the CPU-only build)
-pip install torch==2.14.0 torchvision==0.29.0 --index-url https://download.pytorch.org/whl/cu130
-python -c "import torch; print(torch.cuda.is_available())"     # must print True
-
-# 2. Everything else
-pip install -r requirements.txt
-```
-
-No NVIDIA GPU? Skip step 1. `pip install -r requirements.txt` then installs CPU PyTorch, and the
-server still works, just slower (YOLO takes ~60 ms per frame instead of ~14 ms).
-
-### 2.2 Find the laptop's IP address
-
-```powershell
-ipconfig        # look for "IPv4 Address" on your Wi-Fi adapter, e.g. 192.168.1.21
-```
-
-The Pi and the laptop must be on the same network. Give the laptop a fixed IP (a DHCP reservation
-in your router) so the Pi's setting never goes stale.
-
-### 2.3 Open port 8000 in Windows Firewall
-
-Windows asks the first time the server starts; choose **Private networks**. Or do it once from an
-**administrator** PowerShell:
-
-```powershell
-New-NetFirewallRule -DisplayName "GestureGrasp server" -Direction Inbound -Protocol TCP -LocalPort 8000 -Action Allow -Profile Private
-```
-
-### 2.4 Start the server
+Use **Raspberry Pi OS Bookworm 64-bit**, which has Python 3.11. Newer releases ship a Python that MediaPipe
+has no wheel for.
 
 ```bash
-python -m server                       # listens on 0.0.0.0:8000, real YOLO on the GPU
-python -m server --token mysecret      # require a shared secret from the Pi (recommended)
-python -m server --mock-detector       # fixed fake objects instead of YOLO (testing without objects)
-python -m server --port 9000           # another port
+sudo apt update
+sudo apt install -y python3-venv espeak-ng libgl1 libglib2.0-0 libportaudio2 avahi-daemon libnss-mdns
+git clone https://github.com/Swastik-59/serbot.git
+cd serbot
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --extra-index-url https://download.pytorch.org/whl/cpu -r requirements-pi.txt
 ```
 
-The first start downloads the YOLO weights `yolo11n.pt` (~5 MB) once. When it is ready you will see:
+Two pins in that file matter, so don't upgrade them on their own:
+
+- **`mediapipe==0.10.14`** is the closest version to the one used for evaluation that has an aarch64 wheel
+  (0.10.11 has none). It gave identical landmarks and identical classifications on 1,251 hand photos, on x86.
+- **`protobuf==4.25.9`**. A newer one breaks MediaPipe at start-up.
+
+### 2.2 Export YOLO for this Pi
+
+Do this once, while the Pi has internet:
+
+```bash
+python scripts/export_yolo_pi.py
+```
+
+It downloads `yolo11n.pt`, exports NCNN, times both, and writes the winner to `yolo_best.txt`, which the
+server then loads. The script has Ultralytics' auto-install turned off on purpose, because mid-run it had
+upgraded protobuf and torch and broken both MediaPipe and YOLO.
+
+### 2.3 Start the server
+
+Run everything from the project root.
+
+```bash
+python -m server --camera-url http://esp32cam.local:81/stream
+```
+
+| Flag | Environment variable | Default | Meaning |
+|---|---|---|---|
+| `--camera-url`, `--source` | `SERBOT_CAMERA_URL` | `http://esp32cam.local:81/stream` | Stream URL, `esp32cam.local`, an IP, a video file, an image, or `none` |
+| `--camera-control-url` | `SERBOT_CAMERA_CONTROL_URL` | same host, port 80 | Base URL of the ESP32's `/control`, `/status`, `/capture` |
+| `--framesize` | `SERBOT_FRAMESIZE` | `vga` | ESP32 frame size, sent on every connection |
+| `--quality` | `SERBOT_QUALITY` | `12` | ESP32 JPEG quality, 10 (best) to 63 |
+| `--flip` | `SERBOT_FLIP` | `none` | `h` mirror, `v` upside down, `both` rotated 180° |
+| `--speak` | `SERBOT_SPEAK` | off | Speak prompts on the Pi with espeak-ng |
+| `--max-hands` | `SERBOT_MAX_HANDS` | `2` | See 2.6 |
+| `--token` | `SERBOT_TOKEN` | none | Secret for `/reset`, `/infer`, `/ws/stream`. Never needed for `/stop` |
+| `--mock-detector` | `SERBOT_MOCK_DETECTOR` | off | Fixed test objects instead of YOLO |
+| `--host`, `--port` | `SERBOT_HOST`, `SERBOT_PORT` | `0.0.0.0`, `8000` | Where to listen |
+
+When it is ready you will see:
 
 ```
-Playground: http://localhost:8000/playground  |  Pi connects to ws://<this-laptop-ip>:8000/ws/stream
+Open http://<this-pi>:8000/ on any device on the network
 Server ready.
 Uvicorn running on http://0.0.0.0:8000
+Camera connecting -> streaming
 ```
 
 Stop it with Ctrl+C.
 
-### 2.5 Check it
+### 2.4 Check it
 
 ```bash
 curl http://localhost:8000/health
+curl http://localhost:8000/camera
 ```
-Expect: `"classifier":"TorchMLPClassifier"`, `"detector_device":"cuda:0"`, `"feature_version":"2.0"`.
 
-Open **http://localhost:8000/playground** to try the model (see 2.6), or **http://localhost:8000/**
-for the plain view of the Pi's annotated stream with an **EMERGENCY STOP** button.
+`/health` should show `"classifier":"NumpyMLPClassifier"` and `"feature_version":"2.0"`, with `"detector"`
+naming your YOLO export. `/camera` should show `"state":"streaming"`.
 
-### 2.6 The playground: see what the model can do
+### 2.5 The web page
 
-**http://localhost:8000/playground** is an interactive demo page served by the same server. Every
-frame goes through the same model and decision logic the Pi uses.
+Open **http://\<pi-ip\>:8000/** on any device on the network.
 
 | Source | What it does |
 |---|---|
-| **Your webcam** | Streams the laptop's webcam live. Point at a bottle and the page writes "You're pointing at the **bottle**." |
-| **Raspberry Pi camera** | Watches whatever the Pi is streaming, with the same panels |
-| **A photo** | Analyses one uploaded image (shows what the model reads; no commands, since nothing is held) |
+| **ESP32-CAM (via Pi)** | The default: watches the live annotated video |
+| **Your webcam** | Development: sends this device's webcam to the pipeline. The camera loop pauses while this is on, so two sources never feed one state machine |
+| **A photo** | Development: analyses one uploaded image (shows what the model reads; no commands, since nothing is held) |
 
 What it shows:
+
 - **The sentence:** a plain-language reading of your hand, with a bar that fills while you hold
   the gesture and a "Sent ✓" badge when a command fires.
+- **Camera badge:** connected or lost, frames per second, frame age and Wi-Fi signal.
 - **What the model sees:** confidence for all 9 classes, each with a tick at the confidence that
   gesture needs.
 - **Decision:** confidence vs. required, lead over the runner-up gesture, hold time, the command,
   and in plain words why it did or didn't fire.
 - **Pointing & objects:** the object being pointed at, how far off-centre, how steadily, and every
   object detected.
-- **Speed:** server processing time, round trip, frames per second.
+- **Speed:** server processing time, camera-to-result time, frames per second.
 - **The robot:** its task step by step, a top-down map of it moving, and the log of commands sent.
-- **On the video:** the hand skeleton, the pointing ray and object boxes, with the target highlighted.
 
 Try this:
 
 1. Show 🤙 **call me** until the bar fills. The step track moves from *Asleep* to *Listening*.
-2. 👉 **Point** at a bottle, cup or book. The sentence names it, and the ray and box turn amber and teal.
+2. 👉 **Point** at a bottle, cup or book. The sentence names it.
 3. 👍 **Thumbs up**. The map shows the robot driving out, picking it up and bringing it to *you*.
 4. 👌 **OK** once it says *Delivered*. The robot hands it over and returns to the dock.
 
 Any time: ✋ **stop**, or press **Stop robot**.
 
 Notes:
-- **Webcam access:** browsers only allow the webcam on `localhost` (or HTTPS). Use webcam mode on the
-  laptop itself; other devices on the network can use the Pi and photo modes.
-- **No objects handy:** with `python -m server --mock-detector`, three fixed test objects (bottle,
-  cup, book) stand in for YOLO, so you can try pointing without real objects. The chip at the top
-  says *test objects (no YOLO)* when this is on.
-- **Shared session:** the playground drives the same single session as the Pi, so if the Pi is
-  streaming too, both feed one robot. **Start over** resets it and **Stop robot** stops it.
-- **Photo mode** starts over before each photo, so the photo is judged on its own.
-- **Token:** if the server was started with `--token`, open the page as
-  `http://localhost:8000/playground?token=mysecret`.
-- **Fonts:** the page loads them from Google Fonts. Offline, it falls back to system fonts and works
-  the same.
+
+- **Webcam tab:** browsers only allow the webcam on `localhost` or HTTPS, so on a phone use the ESP32-CAM tab.
+- **Spoken prompts:** `--speak` speaks on the Pi. *Speak prompts here* on the page speaks in that browser
+  instead, which suits a phone or tablet next to the user.
+- **Token:** if the server was started with `--token`, open the page as `http://<pi>:8000/?token=mysecret`.
+  Viewing and STOP work without it; the token is for reset and sending frames.
+- **Fonts:** the page loads them from Google Fonts. Offline, such as on the Pi's hotspot, it falls back to
+  system fonts and works the same.
+
+### 2.6 Measure and tune speed
+
+```bash
+python scripts/benchmark.py --source http://esp32cam.local:81/stream
+```
+
+Stop the server first: the ESP32 stream serves one client. This prints the time for each stage (decode,
+MediaPipe, classifier, YOLO, draw and encode), the real loop's frame rate, and how old each frame was when
+its result was ready. The targets are at least 10 fps and under 250 ms.
+
+If the Pi falls short, try these in order:
+
+1. **Cooling.** An active cooler keeps a Pi 5 from throttling under this load.
+2. **`--max-hands 1`.** With 2, MediaPipe runs its palm detector on every frame until it finds a second
+   hand, which cost about twice as much in our test (58 ms vs 28 ms). The price: if two hands are in view,
+   a resting hand can hide the one making the command.
+3. **`--framesize qvga`** is cheaper per frame, but a hand at 1–2 m may be too small to detect.
 
 ---
 
-## 3. Raspberry Pi: set up the camera client
+## 3. Start automatically, and networking
 
-Tested target: Raspberry Pi 4 or 5, Raspberry Pi OS Bookworm (64-bit), Pi Camera Module or a USB webcam.
-
-### 3.1 Prepare the Pi
+### 3.1 Start on boot
 
 ```bash
-sudo apt update
-sudo apt install -y python3-venv python3-picamera2     # Pi camera support (skip picamera2 for USB-only)
-sudo apt install -y espeak-ng                          # optional: speak prompts aloud
-rpicam-hello -t 2000                                   # Pi camera only: a 2 s preview proves the camera works
+sudo cp deploy/gesturegrasp.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now gesturegrasp
+journalctl -u gesturegrasp -f      # watch it run (Ctrl+C to leave)
 ```
 
-### 3.2 Copy the client to the Pi
+Edit `User`, `WorkingDirectory` and the paths in the unit first if yours differ. Current Pi images ask you
+to create a user, so yours may not be `pi`. Settings and secrets go in `/etc/default/gesturegrasp`, one per
+line, such as `SERBOT_TOKEN=...` or `SERBOT_SPEAK=1`.
 
-Only the `pi_client/` folder is needed. From the laptop (replace `pi@raspberrypi.local`):
+It restarts by itself if it stops, and it reconnects to the camera by itself if the ESP32 reboots.
+
+### 3.2 Use the IP if `.local` does not resolve
+
+`esp32cam.local` needs `avahi-daemon` and `libnss-mdns` on the Pi, and a network that passes multicast. If it
+does not resolve, use the IP printed on the ESP32's serial log and reserve that address in your router:
 
 ```bash
-scp -r pi_client pi@raspberrypi.local:~/
+python -m server --camera-url http://192.168.1.50:81/stream
 ```
 
-### 3.3 Install the Python packages
+### 3.3 Find the Pi's address
 
 ```bash
-cd ~/pi_client
-python3 -m venv --system-site-packages venv    # --system-site-packages lets the venv see apt's picamera2
-source venv/bin/activate
-pip install -r requirements.txt
+hostname -I
 ```
 
-### 3.4 Run it
+`http://<hostname>.local:8000/` also works on most phones and computers.
 
-First check the Pi can reach the server:
+### 3.4 Optional: the Pi as its own Wi-Fi hotspot
+
+With no router around, the Pi can make the network. The ESP32-CAM and your phone join it. Needs hardware check.
+
 ```bash
-curl http://192.168.1.21:8000/health
+sudo nmcli device wifi hotspot ifname wlan0 con-name gesturegrasp ssid GestureGrasp password "choose-8-or-more-characters"
+sudo nmcli connection modify gesturegrasp connection.autoconnect yes 802-11-wireless.band bg
+sudo nmcli connection up gesturegrasp
 ```
 
-Then start streaming:
+`802-11-wireless.band bg` keeps it on 2.4 GHz, the only band the ESP32 can see. Put the same SSID and password
+in `esp32_cam/config.h` and flash again. The Pi is then at `10.42.0.1`, so the page is at
+`http://10.42.0.1:8000/`. If `esp32cam.local` does not resolve, find the camera's address with:
+
 ```bash
-python client.py --server ws://192.168.1.21:8000/ws/stream                    # Pi camera
-python client.py --server ws://192.168.1.21:8000/ws/stream --source 0         # USB webcam
-python client.py --server ws://192.168.1.21:8000/ws/stream --speak            # say prompts aloud
-python client.py --server ws://192.168.1.21:8000/ws/stream --token mysecret   # if the server uses --token
+cat /var/lib/NetworkManager/dnsmasq-wlan0.leases
 ```
 
-What you see:
-```
->>> [IDLE] Show the call-me sign to start.
-call        1.00 hold 60%  | 54 ms
->>> [LISTENING] Point at the object you want.
-```
-The `>>>` lines are the prompts (spoken with `--speak`). The live line shows the recognised gesture,
-its confidence, hold progress, the object being pointed at, and the round-trip time.
+A hotspot has no internet, so finish 2.1 and 2.2 first.
 
-| Option | Default | Meaning |
+---
+
+## 4. Endpoints and messages
+
+### 4.1 HTTP endpoints
+
+| Endpoint | Token? | Purpose |
 |---|---|---|
-| `--server` | (required) | `ws://<laptop-ip>:8000/ws/stream` |
-| `--source` | `picamera` | `picamera`, a camera index (`0`), a video file, or an image file |
-| `--token` | none | Shared secret, if the server was started with `--token` |
-| `--width` / `--height` | 640 / 480 | Capture size; frames wider than `--width` are scaled down |
-| `--fps` | 15 | Upper limit on frames per second |
-| `--quality` | 80 | JPEG quality (lower = less Wi-Fi traffic) |
-| `--speak` | off | Speak each new prompt with espeak-ng |
-| `--max-frames` | 0 | Stop after N frames (0 = run forever) |
+| `GET /`, `/playground` | no | The web page |
+| `GET /viewer` | no | Minimal page: video, state, STOP |
+| `GET /video` | no | MJPEG stream of annotated frames |
+| `GET /camera` | no | Camera state, fps, frame age, ESP32 status, loop speed |
+| `GET /health` | no | Loaded model, detector and camera state |
+| `GET /state` | no | Current state, prompt, robot status, recent events |
+| `GET /latest` | no | The last frame's full result |
+| `GET /config` | no | Gestures, thresholds, states, robot map and model scores |
+| `POST /stop` | **never** | Emergency stop, works in every state, even with the camera down. Anyone in the room must be able to stop the robot |
+| `POST /reset` | yes | Back to IDLE, robot docked |
+| `POST /infer` | yes | Development: body = one JPEG; returns the same JSON as `/latest` |
+| `WS /ws/stream` | yes | Development: one binary JPEG per message, one JSON reply per frame. The camera loop pauses while a client is connected |
 
-### 3.5 Start automatically when the Pi boots
+```bash
+curl -X POST http://<pi>:8000/stop
+curl -X POST --data-binary @hand.jpg http://<pi>:8000/infer
+```
 
-1. Edit `~/pi_client/gesturegrasp-client.service`: the user name, the paths, the laptop IP, and the
-   options on the `ExecStart` line.
-2. Install and enable it:
-   ```bash
-   sudo cp ~/pi_client/gesturegrasp-client.service /etc/systemd/system/
-   sudo systemctl daemon-reload
-   sudo systemctl enable --now gesturegrasp-client
-   journalctl -u gesturegrasp-client -f      # watch it run (Ctrl+C to leave)
-   ```
-It restarts by itself if it stops, and the client reconnects by itself if the laptop restarts.
+The server runs one shared session: one camera, one robot, one state machine.
 
----
+### 4.2 `/camera`
 
-## 4. How the Pi and the server talk
+```json
+{
+  "kind": "esp32cam", "state": "streaming", "mode": "stream",
+  "fps": 19.7, "last_frame_age_ms": 31.0, "frame_id": 380, "frames_received": 380,
+  "reconnects": 0, "decode_errors": 0, "flip": "none", "last_error": null,
+  "url": "http://esp32cam.local:81/stream",
+  "esp32": {"framesize": "vga", "quality": 12, "fps": 19.8, "uptime_s": 311, "free_heap": 150000,
+            "free_psram": 3400000, "rssi": -58, "ip": "192.168.1.50", "hmirror": 0, "vflip": 0},
+  "loop": {"fps": 12.1, "processed": 300, "skipped": 78, "errors": 0,
+           "latency_ms": 60.4, "frame_age_ms": 112.1, "paused": false}
+}
+```
 
-### 4.1 The camera stream (WebSocket)
+| Field | Meaning |
+|---|---|
+| `state` | `connecting` (no frame yet), `streaming`, or `lost` (retrying) |
+| `mode` | `stream`, or `capture` when `/stream` keeps failing and the Pi polls `/capture` instead |
+| `fps`, `last_frame_age_ms` | Frames arriving from the ESP32, and how old the newest one is |
+| `esp32` | The board's own `/status`, refreshed every 5 s. `null` if unreachable |
+| `loop.fps`, `loop.latency_ms` | How fast the pipeline keeps up, and the last frame's processing time |
+| `loop.skipped` | Frames replaced before the pipeline reached them. Normal: this is how backlog is avoided |
+| `loop.frame_age_ms` | Time from a frame reaching the Pi to its result |
 
-`ws://<laptop>:8000/ws/stream` (add `?token=...` if the server has one).
+### 4.3 `/latest`
 
-- **Pi → server:** one binary message = one JPEG frame.
-- **Server → Pi:** one JSON message per frame.
-- **Lock-step:** the Pi sends the next frame only after the reply arrives. If Wi-Fi or the model
-  slows down, frames are skipped rather than queued, so a command never fires from a stale frame.
-
-Reply example (shortened; `...` marks trimmed lists):
+Shortened; `...` marks trimmed lists:
 
 ```json
 {
@@ -265,6 +317,7 @@ Reply example (shortened; `...` marks trimmed lists):
   "pointing_at": "bottle",
   "pointing": {"label": "bottle", "angular_deviation_deg": 4.2, "direct_hit": true, "hold_progress": 0.6},
   "proposed_target": null,
+  "frame_id": 1042,
   "frame_size": [640, 480],
   "landmarks": [[0.512, 0.744], "... 21 points (x, y), 0..1 of the frame"],
   "pointing_ray": {"origin": [331.0, 352.4], "tip": [377.9, 301.2], "direction": [0.675, -0.737]},
@@ -286,39 +339,16 @@ Reply example (shortened; `...` marks trimmed lists):
 | `state`, `message` | Current step of the task and the prompt to show or speak |
 | `pointing_at`, `pointing`, `pointing_ray` | The object under the finger. Filled **only while the gesture is point**, otherwise `null` |
 | `proposed_target` | The object waiting for thumbs up / down |
+| `frame_id` | The camera frame this result came from |
 | `landmarks`, `frame_size` | Hand points as fractions of the frame, and the frame's width/height in pixels |
-| `objects` | Allowed objects YOLO found, with boxes in frame pixels |
+| `objects` | Allowed objects YOLO found, with boxes in frame pixels. On a live stream they can be a few frames old |
 | `robot` | Robot status: state, position, what it holds, whether it is stopped |
 | `events`, `commands` | Last 5 state changes, and the last 20 commands that fired (also kept between frames) |
-| `latency_ms` | Server processing time for this frame |
-
-A frame that is not a valid image gets `{"error": "undecodable frame"}` and the stream continues.
+| `latency_ms` | Processing time for this frame |
 
 **The system moves forward on frames.** The state machine, timeouts and simulated robot advance each
-time a frame arrives, with or without a hand in it. While the Pi streams, that is continuous. If no
-client sends frames, the robot pauses where it is until frames resume.
-
-### 4.2 HTTP endpoints
-
-| Endpoint | Token? | Purpose |
-|---|---|---|
-| `GET /health` | no | Loaded model, detector and device |
-| `GET /state` | no | Current state, prompt, robot status, recent events |
-| `POST /stop` | **never** | Emergency stop, works in every state. Anyone in the room must be able to stop the robot |
-| `POST /reset` | yes | Back to IDLE, robot docked |
-| `POST /infer` | yes | Body = one JPEG; returns the same JSON as the stream (for testing with curl) |
-| `GET /playground` | no | Interactive demo page (2.6) |
-| `GET /config` | no | Gestures, thresholds, states, robot map and model scores (used by the playground) |
-| `GET /latest` | no | The last frame's full result, whoever sent it |
-| `GET /` | no | Browser viewer with the annotated stream and a STOP button |
-| `GET /video` | no | MJPEG stream of annotated frames (used by the viewer) |
-
-```bash
-curl -X POST --data-binary @hand.jpg http://192.168.1.21:8000/infer
-curl -X POST http://192.168.1.21:8000/stop
-```
-
-The server runs one shared session: one camera, one robot, one state machine.
+time a frame is processed. If the camera is lost they pause where they are until frames resume. `/stop` still
+works during that time.
 
 ---
 
@@ -328,8 +358,9 @@ The server runs one shared session: one camera, one robot, one state machine.
 
 - **Input:** 21 hand landmarks from MediaPipe Hands (x, y), turned into 126 features: positions,
   finger bend angles, fingertip distances, finger extension, hand roll. No handedness needed.
-- **Classifier:** a neural network (126 → 512 → 256 → 128 → 9) trained on the GPU,
-  temperature-calibrated so its confidence matches reality. ~0.3 ms per hand on the CPU.
+- **Classifier:** a neural network (126 → 512 → 256 → 128 → 9) trained on a GPU,
+  temperature-calibrated so its confidence matches reality. On the Pi it runs from
+  `models/mlp_weights.npz` with NumPy alone: the same weights, without torch or scikit-learn.
 - **Classes:** the 7 commands plus `no_gesture` and `fist`, which are trained "not a command" classes.
 - **Training data:** 435,939 hands from 40,159 people (HaGRID v2). It also includes open palms
   (trained as STOP), everyday poses (trained as "not a command"), and every hand at random
@@ -356,13 +387,19 @@ test, not clinical evidence.
 
 ### 5.3 Retrain
 
-Only needed if you change the gestures, thresholds or training data. Takes ~3 minutes on the RTX 4060.
+Only needed if you change the gestures, thresholds or training data. This runs on a GPU PC, not on the Pi.
+Takes ~3 minutes on an RTX 4060.
 
 ```bash
+# GPU build of PyTorch first, otherwise ultralytics pulls in the CPU-only build
+pip install torch==2.14.0 torchvision==0.29.0 --index-url https://download.pytorch.org/whl/cu130
+pip install -r requirements-dev.txt
+
 python download_dataset.py --check      # what is missing (the annotations are already on disk)
 python download_dataset.py              # fetch missing annotation files (never past 10 GB in data/raw)
 python -m src.gesturegrasp.train_v2     # build features, train on GPU, evaluate, save to models/
-pytest -q                               # 56 tests
+python scripts/export_mlp_numpy.py      # refresh models/mlp_weights.npz; checks it matches the new model
+pytest -q
 ```
 
 Training:
@@ -370,7 +407,8 @@ Training:
 - updates each gesture's `min_conf` in `configs/intents.yaml` (chosen on validation users),
 - rebuilds `data/processed/hagrid_landmarks.parquet` if it is missing.
 
-Restart the server afterwards so it loads the new model.
+Copy `models/` and `configs/intents.yaml` to the Pi and restart the server. If you skip the export, the Pi
+notices `mlp_weights.npz` no longer matches and falls back to the joblib files, which is slower to load.
 
 ### 5.4 Tune behaviour without retraining
 
@@ -402,19 +440,48 @@ report it is IDLE and holding the object before it asks the user for OK.
 
 | Symptom | Fix |
 |---|---|
-| Pi: `Connection refused` / timeout | Server not running, wrong IP, or the firewall rule is missing (2.3). Test with `curl http://<ip>:8000/health` from the Pi |
-| Pi: connects then closes at once (code 1008) | Server has `--token`; start the client with the same `--token` |
-| Pi: `Cannot open camera/video source` | Pi camera: install `python3-picamera2` and use the `--system-site-packages` venv. USB: try `--source 0` or `1` |
-| Colours look wrong (blue skin) in the viewer | Use the default `--source picamera`; it already outputs the colour order OpenCV expects |
-| `/health` shows `detector_device: cpu` | CUDA PyTorch is not installed: redo step 2.1 part 1 and check it prints `True` |
-| Server: `Trained model files missing` | `models/` is incomplete: retrain (5.3) |
+| No frames, `/camera` says `lost` | Test the camera from the Pi: `curl -s http://<esp32-ip>/status`. If that fails, check power and Wi-Fi on the ESP32's serial log. Then check the URL in `--camera-url` |
+| `esp32cam.local` does not resolve | Use the IP (3.2). Check `avahi-daemon` and `libnss-mdns` are installed |
+| Stream stalls or stays on `connecting` | Something else holds the ESP32 stream: it serves one client. Close any browser tab on `:81/stream` and stop `scripts/benchmark.py` |
+| Drops out now and then, serial log shows `Brownout detector was triggered` | The power supply. Use a stable 5 V, at least 1 A, 2 A preferred, on the 5V pin, with short wires |
+| `/camera` shows `mode: capture` | `/stream` keeps failing, so the Pi is polling `/capture` at a lower rate. Same checks as above |
+| High latency, `loop.frame_age_ms` over 250 | Check the Pi is not throttling (`vcgencmd get_throttled` should print `0x0`), then see 2.6 |
+| Low fps on the Pi | Run `scripts/benchmark.py` to see which stage is slow, then see 2.6. Low `fps` under `/camera` itself points to Wi-Fi: a low RSSI (under about -70 dBm) means move the camera or antenna closer |
+| Wrong colours or a tint | White balance on the camera: `curl "http://<esp32-ip>/control?var=awb&val=1"`, and let it settle for a few seconds in steady light |
+| Picture upside down or mirrored | `--flip v`, `--flip h` or `--flip both` |
+| Hand not detected at a distance | Keep `--framesize vga` or larger; at QVGA a hand at 1–2 m is too small. Better light helps, and so does keeping the whole hand in view |
 | Gestures fire too easily / too slowly | Raise / lower `hold_time` in `configs/intents.yaml` |
-| Hand not detected | Better light, hand 0.5–2 m from the camera, whole hand in view |
-| Slow (> 150 ms per frame) | Lower `--quality` or `--width` on the Pi, use 5 GHz Wi-Fi, check the GPU is used |
-| `--speak` is silent | `sudo apt install -y espeak-ng`, and check the Pi's audio output (`raspi-config`) |
-| Playground: "The browser blocked the camera" | Allow the camera for the page (camera icon in the address bar), and open it as `http://localhost:8000/playground`, not via the laptop's IP |
-| Playground: "Server not reachable" | The server is not running, or it runs on another port: use that port in the URL |
-| Playground: "Wrong or missing token" | Add `?token=<same secret>` to the page URL |
-| Playground Pi mode: "No frames yet" | Start `client.py` on the Pi; the page only watches, it does not start the Pi |
-| Playground: no objects found | Real YOLO only knows the objects in `pointing.allowed_classes`; put one in view, or start the server with `--mock-detector` |
-| Robot frozen on the map | Nothing is sending frames (see 4.1): turn the webcam on or start the Pi client |
+| Server: `Trained model files missing` | `models/` is incomplete: copy it from the repo or a training PC |
+| `AttributeError: ... has no attribute 'label'` from MediaPipe | protobuf was upgraded. `pip install protobuf==4.25.9` |
+| Log repeats `operator torchvision::nms does not exist` | torch and torchvision no longer match, and YOLO finds nothing. Reinstall both from `requirements-pi.txt` |
+| Page says *test objects (no YOLO)* without `--mock-detector` | YOLO failed to load, so fixed fake objects are in use. Check the log, and that step 2.2 ran. A hotspot has no internet to download weights |
+| `--speak` is silent | `sudo apt install -y espeak-ng`, and check the Pi's audio output. The Pi 5 has no audio jack, so use a USB or Bluetooth speaker |
+| Page: "The browser blocked the camera" | The webcam tab needs `localhost` or HTTPS. On a phone, use the ESP32-CAM tab |
+| Page: "Server not reachable" | The server is not running, or it runs on another port: use that port in the URL |
+| Reset does nothing | The server has `--token`: open the page with `?token=<same secret>` |
+| Robot frozen on the map | No frames are being processed (see 4.3). Check the camera badge |
+
+---
+
+## 8. Hardware smoke-test checklist
+
+Everything above was tested without the physical boards, against `tests/fake_esp32.py`. These steps need the
+real hardware, in this order:
+
+1. **Flash:** follow [esp32_cam/README.md](esp32_cam/README.md). The firmware has not been compiled yet, so check
+   that it builds on Arduino-ESP32 core 3.x. The serial log should show `Camera ready, PID 0x26` and an IP.
+2. **Capture:** open `http://<esp32-ip>/capture` and `http://<esp32-ip>/status`. The image should be 640x480.
+3. **From the Pi:** `curl -s http://<esp32-ip>/status`, then
+   `curl -s --max-time 3 -o /dev/null -w "%{size_download}\n" http://<esp32-ip>:81/stream`. Expect a few hundred KB.
+4. **Install:** `pip install` from 2.1 finishes on the Pi, and `python -c "import mediapipe; print(mediapipe.__version__)"`
+   prints `0.10.14`.
+5. **Export:** `python scripts/export_yolo_pi.py` prints a fastest backend, and `pytest -q` still passes after it.
+6. **Benchmark:** `python scripts/benchmark.py --source http://<esp32-ip>:81/stream`. Record fps and frame age. The
+   targets are at least 10 fps and under 250 ms.
+7. **Server:** `python -m server --camera-url http://<esp32-ip>:81/stream`. `/camera` shows `streaming`.
+8. **Page:** open `http://<pi-ip>:8000/` on a phone. Video plays and the badge shows fps and Wi-Fi signal.
+9. **WAKE:** hold 🤙 for 0.6 s at 1–2 m. The page moves to *Listening*.
+10. **STOP:** hold ✋. The page shows *Stopped* within about half a second. Press **Stop robot** as well.
+11. **Recovery:** unplug the ESP32-CAM. The badge shows *lost* within a few seconds. Plug it back in: video
+    returns by itself, with no restart of the server.
+12. **Reboot:** with the service enabled, reboot the Pi and check the page comes back by itself.
