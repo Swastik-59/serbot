@@ -183,16 +183,18 @@
   <header>
     <div class="brand"><b>GestureGrasp</b><span>Playground: see what the model reads from your hand</span></div>
     <span class="chip" id="modelChip"><span class="dot"></span><span>Loading model…</span></span>
+    <span class="chip" id="camChip"><span class="dot"></span><span>Camera: checking…</span></span>
     <span class="chip" id="connChip"><span class="dot"></span><span>Not streaming</span></span>
   </header>
 
   <div class="toolbar">
     <div class="tabs" role="tablist" aria-label="Camera source">
-      <button class="tab" role="tab" aria-selected="true" data-src="webcam">Your webcam</button>
-      <button class="tab" role="tab" aria-selected="false" data-src="pi">Raspberry Pi camera</button>
+      <button class="tab" role="tab" aria-selected="true" data-src="esp32">ESP32-CAM (via Pi)</button>
+      <button class="tab" role="tab" aria-selected="false" data-src="webcam">Your webcam</button>
       <button class="tab" role="tab" aria-selected="false" data-src="photo">A photo</button>
     </div>
-    <label class="toggle" id="mirrorWrap"><input type="checkbox" id="mirror" checked> Mirror my view</label>
+    <label class="toggle hidden" id="mirrorWrap"><input type="checkbox" id="mirror" checked> Mirror my view</label>
+    <label class="toggle" id="speakWrap"><input type="checkbox" id="speak"> Speak prompts here</label>
     <span class="spacer"></span>
     <button class="btn" id="resetBtn">Start over</button>
     <button class="btn stop" id="stopBtn">Stop robot</button>
@@ -207,7 +209,7 @@
         <canvas id="overlay"></canvas>
         <div class="empty" id="empty">
           <h2>Show me your hand</h2>
-          <p>Your webcam frames go to the same model and decision logic the Raspberry Pi uses. Nothing is recorded.</p>
+          <p>Your webcam frames go to the same model and decision logic as the ESP32-CAM. Nothing is recorded.</p>
           <button class="btn" id="startBtn">Turn on webcam</button>
           <input type="file" id="photoInput" accept="image/*" class="hidden">
         </div>
@@ -261,7 +263,7 @@
         <p class="label">Speed</p>
         <dl class="facts">
           <dt>Server processing</dt><dd id="sLatency">—</dd>
-          <dt>Round trip</dt><dd id="sRtt">—</dd>
+          <dt id="sRttLabel">Camera to result</dt><dd id="sRtt">—</dd>
           <dt>Frames per second</dt><dd id="sFps">—</dd>
         </dl>
       </section>
@@ -311,7 +313,7 @@ const STATE = { IDLE: "Asleep", LISTENING: "Listening", TARGET_PROPOSED: "Object
   EXECUTING: "Fetching", AWAIT_FEEDBACK: "Delivered", RETURNING: "Going home", STOPPED: "Stopped" };
 const MAIN_FLOW = ["IDLE", "LISTENING", "TARGET_PROPOSED", "EXECUTING", "AWAIT_FEEDBACK"];
 
-let config = null, source = "webcam", ws = null, stream = null, pollTimer = null;
+let config = null, source = "esp32", ws = null, stream = null, pollTimer = null, camera = null;
 let sentAt = 0, lastFrameAt = 0, fps = 0, lastState = null, lastOverlay = null;
 const capture = document.createElement("canvas");
 
@@ -342,8 +344,7 @@ async function loadConfig() {
   try {
     config = await (await fetch("/config")).json();
     const m = config.model;
-    const device = (m.detector_device || "").startsWith("cuda") ? "GPU" : "CPU";
-    const objects = (m.detector || "").startsWith("mock") ? "test objects (no YOLO)" : `YOLO on ${device}`;
+    const objects = (m.detector || "").startsWith("mock") ? "test objects (no YOLO)" : "YOLO on the Pi";
     setChip("modelChip", "ok", `Neural net (features ${m.feature_version}) · ${objects}`);
     const pct = (v) => v == null ? "—" : `${(v * 100).toFixed(1)}%`;
     $("footer").innerHTML = `
@@ -385,11 +386,11 @@ function selectSource(src) {
   empty.classList.remove("hidden");
   if (src === "webcam") {
     empty.querySelector("h2").textContent = "Show me your hand";
-    empty.querySelector("p").textContent = "Your webcam frames go to the same model and decision logic the Raspberry Pi uses. Nothing is recorded.";
+    empty.querySelector("p").textContent = "Your webcam frames go to the same model and decision logic as the ESP32-CAM. Nothing is recorded.";
     $("startBtn").textContent = "Turn on webcam";
-  } else if (src === "pi") {
+  } else if (src === "esp32") {
     empty.classList.add("hidden");
-    startPiWatch();
+    startCameraWatch();
   } else {
     empty.querySelector("h2").textContent = "Try a photo";
     empty.querySelector("p").textContent = "Pick a photo with a hand in it. A single photo shows what the model reads; commands need a held gesture, so none are sent.";
@@ -442,18 +443,18 @@ function sendFrame() {
   }, "image/jpeg", 0.8);
 }
 
-function startPiWatch() {
+function startCameraWatch() {
   const view = $("view");
   view.src = withToken("/video");
   view.classList.remove("hidden");
-  setChip("connChip", "", "Waiting for the Pi…");
+  setChip("connChip", "", "Waiting for frames…");
   let lastSeen = null;
   pollTimer = setInterval(async () => {
     try {
       const r = await (await fetch("/latest")).json();
-      if (r.waiting) { setChip("connChip", "", "No frames yet: start pi_client on the Pi"); return; }
+      if (r.waiting) { setChip("connChip", "", "No frames yet: check the ESP32-CAM"); return; }
       const key = JSON.stringify([r.latency_ms, r.hold_progress, r.confidence, r.state]);
-      if (key !== lastSeen) { setChip("connChip", "ok", "Watching the Pi's camera"); lastSeen = key; render(r, null, false); }
+      if (key !== lastSeen) { setChip("connChip", "ok", "Watching the ESP32-CAM"); lastSeen = key; render(r, null, false); }
     } catch (e) { setChip("connChip", "bad", "Server not reachable"); }
   }, 200);
 }
@@ -469,6 +470,42 @@ async function sendPhoto(file) {
   if (!res.ok) { $("says").textContent = "That file could not be read as an image."; return; }
   render(await res.json(), performance.now() - t0);
   setChip("connChip", "ok", "Photo analysed");
+}
+
+/* ---------- camera status and spoken prompts ---------- */
+async function pollCamera() {
+  try {
+    camera = await (await fetch("/camera")).json();
+    renderCamera();
+  } catch (e) {
+    camera = null;
+    setChip("camChip", "bad", "Camera: server not reachable");
+  }
+}
+
+function renderCamera() {
+  if (camera.state === "disabled") { setChip("camChip", "", "No camera configured"); return; }
+  const parts = [];
+  if (camera.state === "streaming") {
+    parts.push(camera.mode === "capture" ? "ESP32-CAM slow mode" : "ESP32-CAM connected");
+    if (camera.fps) parts.push(`${camera.fps.toFixed(0)} fps`);
+    if (camera.last_frame_age_ms != null) parts.push(`${camera.last_frame_age_ms.toFixed(0)} ms old`);
+    if (camera.esp32?.rssi != null) parts.push(`Wi-Fi ${camera.esp32.rssi} dBm`);
+    setChip("camChip", "ok", parts.join(" · "));
+  } else if (camera.state === "connecting") {
+    setChip("camChip", "", "ESP32-CAM connecting…");
+  } else {
+    setChip("camChip", "bad", "ESP32-CAM lost, reconnecting…");
+  }
+}
+
+let spokenMessage = null;
+function speakPrompt(message) {
+  if (!message || message === spokenMessage) return;
+  spokenMessage = message;
+  if (!$("speak").checked || !window.speechSynthesis) return;
+  speechSynthesis.cancel();                                  // a newer prompt replaces the older one
+  speechSynthesis.speak(new SpeechSynthesisUtterance(message));
 }
 
 /* ---------- rendering ---------- */
@@ -503,6 +540,7 @@ function render(r, rttMs, drawOverlay = true) {
   const now = performance.now();
   if (lastFrameAt) fps = 0.8 * fps + 0.2 * (1000 / Math.max(1, now - lastFrameAt));
   lastFrameAt = now;
+  speakPrompt(r.message);
 
   // caption (signature)
   const cap = captionFor(r);
@@ -554,8 +592,11 @@ function render(r, rttMs, drawOverlay = true) {
 
   // speed
   $("sLatency").textContent = r.latency_ms != null ? `${r.latency_ms.toFixed(0)} ms` : "—";
-  $("sRtt").textContent = rttMs != null ? `${rttMs.toFixed(0)} ms` : (source === "pi" ? "measured on the Pi" : "—");
-  $("sFps").textContent = fps ? fps.toFixed(1) : "—";
+  const watching = source === "esp32" && camera?.loop;
+  $("sRttLabel").textContent = source === "esp32" ? "Camera to result" : "Round trip";
+  $("sRtt").textContent = watching ? `${camera.loop.frame_age_ms.toFixed(0)} ms` : (rttMs != null ? `${rttMs.toFixed(0)} ms` : "—");
+  const shownFps = watching ? camera.loop.fps : fps;
+  $("sFps").textContent = shownFps ? shownFps.toFixed(1) : "—";
 
   // task steps, gestures, robot
   document.querySelectorAll(".step").forEach(el => {
@@ -711,6 +752,10 @@ document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () =>
 $("startBtn").addEventListener("click", () => source === "photo" ? $("photoInput").click() : startWebcam());
 $("photoInput").addEventListener("change", (e) => e.target.files[0] && sendPhoto(e.target.files[0]));
 $("mirror").addEventListener("change", () => $("video").classList.toggle("mirror", $("mirror").checked));
+$("speak").addEventListener("change", () => {
+  spokenMessage = null;                                       // say the current prompt straight away
+  if (!$("speak").checked) window.speechSynthesis?.cancel();
+});
 $("stopBtn").addEventListener("click", async () => {
   const s = await (await fetch("/stop", { method: "POST" })).json();
   render({ ...s, hand_detected: false, intent_fired: false, probabilities: {} }, null, false);
@@ -724,7 +769,9 @@ $("resetBtn").addEventListener("click", async () => {
 });
 window.addEventListener("resize", () => { if (lastOverlay) drawOverlayFor(lastOverlay); });
 
-loadConfig();
+loadConfig().then(() => selectSource("esp32"));
+pollCamera();
+setInterval(pollCamera, 1000);
 </script>
 </body>
 </html>
