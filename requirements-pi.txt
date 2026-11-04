@@ -1,0 +1,47 @@
+# Raspberry Pi 5, Raspberry Pi OS Bookworm 64-bit, Python 3.11. Runs the whole system, CPU only.
+#
+#   sudo apt install -y python3-venv espeak-ng libgl1 libglib2.0-0 libportaudio2 avahi-daemon libnss-mdns
+#   python3 -m venv .venv && source .venv/bin/activate
+#   pip install --extra-index-url https://download.pytorch.org/whl/cpu -r requirements-pi.txt
+#
+# Training and download_dataset.py stay on a GPU PC: see requirements-dev.txt.
+
+# Hand landmarks. 0.10.11, used before, has no aarch64 wheel. 0.10.14 is the closest version that
+# does, and it gave identical landmarks on 1,251 hand photos. protobuf must stay on the line below:
+# a newer one breaks MediaPipe at start-up (AttributeError: ... has no attribute 'label').
+mediapipe==0.10.14
+protobuf==4.25.9
+
+# Object detection. Keep torch and torchvision on matching versions: a mismatch makes YOLO fail on
+# every frame with "operator torchvision::nms does not exist".
+ultralytics==8.4.164
+torch==2.14.0
+torchvision==0.29.0
+
+# Exporters for scripts/export_yolo_pi.py. Ultralytics would otherwise install these by itself and
+# upgrade protobuf and torch along the way.
+ncnn==1.0.20261020
+pnnx==20260526
+
+# Server
+fastapi==0.140.13
+uvicorn[standard]==0.34.0
+websockets==16.1.1
+requests==2.34.2
+urllib3>=2.1
+PyYAML==6.0.3
+
+# Frames and maths. mediapipe pulls in opencv-contrib-python; this keeps ultralytics' opencv-python on
+# the same version, since both install the same cv2 package.
+opencv-contrib-python==5.0.0.93
+opencv-python==5.0.0.93
+numpy==2.2.2
+
+# The classifier runs from models/mlp_weights.npz with NumPy alone. These two are only needed to load
+# the joblib files if that export is missing or out of date.
+scikit-learn==1.6.1
+joblib==1.4.2
+
+# Tests
+pytest==8.3.4
+httpx==0.28.1

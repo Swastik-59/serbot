@@ -1,1 +1,1 @@
-"""FastAPI inference server: the laptop runs the model, the Raspberry Pi streams camera frames to it."""
+"""FastAPI server: runs the full pipeline on the Raspberry Pi 5 and serves the web page."""

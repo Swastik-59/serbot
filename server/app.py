@@ -1,29 +1,42 @@
 """
-GestureGrasp inference server.
+GestureGrasp server. Runs the whole system on the Raspberry Pi 5.
 
-The laptop runs the full GesturePipeline (MediaPipe -> classifier -> IntentEngine -> pointing/YOLO
--> FSM -> robot). The Raspberry Pi only captures frames and sends them here as JPEG bytes.
+A background loop pulls the newest frame from the ESP32-CAM, runs the full GesturePipeline
+(MediaPipe -> classifier -> IntentEngine -> pointing/YOLO -> FSM -> robot) and stores the result.
+Any browser on the network opens the page and watches.
 
 Endpoints:
-    WS   /ws/stream   Pi sends one binary JPEG per message, gets one JSON result back (lock-step,
-                      so frames never queue up behind a slow inference).
-    POST /infer       Same as one WebSocket step, for curl / debugging (body = raw JPEG bytes).
-    GET  /state       Current FSM + robot status without sending a frame.
-    POST /stop        Emergency stop from any device. Works in every state, including IDLE.
-    POST /reset       Reset FSM, intent engine and robot to IDLE.
+    GET  /            The web page (same as /playground).
+    GET  /playground  Live view with every model detail. Also takes a webcam or a photo for development.
+    GET  /viewer      Minimal page: video, state and STOP, for old devices.
+    GET  /video       MJPEG stream of annotated frames. Browsers watch this, never the ESP32.
+    GET  /camera      Camera state, fps, frame age, ESP32 /status data, and the processing loop's speed.
+    GET  /state       Current FSM + robot status.
+    GET  /latest      Last frame's full result.
+    GET  /config      Gestures, thresholds, states, robot map and model scores, for the page.
     GET  /health      Liveness + which model / detector is loaded.
-    GET  /playground  Interactive demo: laptop webcam, the Pi's stream, or a photo, with every model detail.
-    GET  /latest      Last frame's full result (the playground uses it to watch the Pi).
-    GET  /config      Gestures, thresholds, states, robot map and model scores, for the playground.
-    GET  /            Browser viewer of the annotated stream (what the server sees).
-    GET  /video       MJPEG stream of annotated frames, used by the viewer.
+    POST /stop        Emergency stop from any device, in every state. Never needs a token.
+    POST /reset       Reset FSM, intent engine and robot to IDLE.
 
-Config (environment variables):
-    SERBOT_TOKEN          If set, clients must send it as ?token=... or header X-Token.
-    SERBOT_MOCK_DETECTOR  "1" uses fixed fake objects instead of YOLO (no weights needed).
+Optional development endpoints (not needed on the Pi):
+    POST /infer       One JPEG in, one JSON result out, for curl and photos.
+    WS   /ws/stream   Send one binary JPEG per message, get one JSON result back (lock-step).
+                      The camera loop pauses while a client is connected, so two sources never
+                      feed one state machine.
+
+Config (environment variables, or the flags of `python -m server`):
+    SERBOT_CAMERA_URL          Stream URL, host name, video file or image. "none" runs without a camera.
+    SERBOT_CAMERA_CONTROL_URL  Base URL of the ESP32's /control, /status and /capture.
+    SERBOT_FRAMESIZE           ESP32 frame size name, e.g. vga.
+    SERBOT_QUALITY             ESP32 JPEG quality, lower is better (10-63).
+    SERBOT_FLIP                none, h, v or both.
+    SERBOT_SPEAK               "1" speaks prompts on the Pi through espeak-ng.
+    SERBOT_MAX_HANDS           2 (default) or 1. 1 is about twice as fast, but a second hand can hide the command.
+    SERBOT_TOKEN               If set, clients must send it as ?token=... or header X-Token.
+    SERBOT_MOCK_DETECTOR       "1" uses fixed fake objects instead of YOLO (no weights needed).
 
 Run:
-    python -m server --host 0.0.0.0 --port 8000
+    python -m server --host 0.0.0.0 --port 8000 --camera-url http://esp32cam.local:81/stream
 """
 
 from __future__ import annotations
@@ -45,13 +58,14 @@ from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconn
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import HTMLResponse, StreamingResponse
 
+from server.loop import CameraLoop
+from server.speech import Speaker
+from src.gesturegrasp.camera import DEFAULT_CAMERA_URL, MAX_FRAME_BYTES, CameraSource, make_source
 from src.gesturegrasp.pipeline import GesturePipeline, PipelineResult
 
 logger = logging.getLogger("gesturegrasp.server")
 
-MAX_FRAME_BYTES = 4 * 1024 * 1024
-
-# Short spoken/on-screen prompt per FSM state, so the Pi can tell the user what to do next.
+# Short spoken/on-screen prompt per FSM state, so the user always knows what to do next.
 STATE_PROMPTS = {
     "IDLE": "Show the call-me sign to start.",
     "LISTENING": "Point at the object you want.",
@@ -67,6 +81,19 @@ def _env_flag(name: str) -> bool:
     return os.environ.get(name, "").strip().lower() in {"1", "true", "yes"}
 
 
+def _camera_from_env() -> Optional[CameraSource]:
+    source = os.environ.get("SERBOT_CAMERA_URL", DEFAULT_CAMERA_URL).strip()
+    if source.lower() in {"", "none", "off"}:
+        logger.info("Running without a camera: use /infer or /ws/stream.")
+        return None
+    quality = os.environ.get("SERBOT_QUALITY", "").strip()
+    return make_source(source,
+                       control_url=os.environ.get("SERBOT_CAMERA_CONTROL_URL") or None,
+                       framesize=os.environ.get("SERBOT_FRAMESIZE") or None,
+                       quality=int(quality) if quality else None,
+                       flip=os.environ.get("SERBOT_FLIP") or "none")
+
+
 def decode_jpeg(data: bytes) -> Optional[np.ndarray]:
     if not data or len(data) > MAX_FRAME_BYTES:
         return None
@@ -77,17 +104,21 @@ def decode_jpeg(data: bytes) -> Optional[np.ndarray]:
 class InferenceService:
     """Owns the single pipeline. One lock serialises frames, since the FSM is one shared session."""
 
-    def __init__(self, pipeline: GesturePipeline):
+    def __init__(self, pipeline: GesturePipeline, speaker: Optional[Speaker] = None):
         self.pipeline = pipeline
+        self.dev_streams = 0  # open /ws/stream clients; the camera loop pauses while there are any
+        self._speaker = speaker
+        self._spoken_state: Optional[str] = None
         self._lock = threading.Lock()
         self._latest_jpeg: Optional[bytes] = None
         self._latest_result: Optional[dict[str, Any]] = None
         self._frame_count = 0
         self._commands: list[dict[str, Any]] = []  # fired commands, newest last (kept short)
 
-    def process(self, frame: np.ndarray) -> dict[str, Any]:
+    def process(self, frame: np.ndarray, timestamp: Optional[float] = None, frame_id: Optional[int] = None,
+                live: bool = False) -> dict[str, Any]:
         with self._lock:
-            result = self.pipeline.process(frame)
+            result = self.pipeline.process(frame, timestamp=timestamp, live=live)
             self._frame_count += 1
             if result.annotated_frame is not None:
                 ok, buf = cv2.imencode(".jpg", result.annotated_frame, [cv2.IMWRITE_JPEG_QUALITY, 70])
@@ -101,6 +132,8 @@ class InferenceService:
                 })
                 del self._commands[:-20]
             self._latest_result = self._serialize(result, frame.shape[:2])
+            self._latest_result["frame_id"] = frame_id
+            self._announce(self._latest_result["state"], self._latest_result["message"])
             return self._latest_result
 
     @property
@@ -126,17 +159,31 @@ class InferenceService:
             if sm.current_state != "STOPPED":
                 # Direct transition: FSM handle_intent("STOP") ignores IDLE, but a manual stop must hold.
                 sm.transition_to("STOPPED", "MANUAL_STOP", "Emergency stop from API")
+            self._announce(sm.current_state, self._message(sm.current_state, sm.proposed_target))
         return self.snapshot()
 
     def reset(self) -> dict[str, Any]:
         with self._lock:
             self.pipeline.reset()
             self._commands.clear()
+            sm = self.pipeline.state_machine
+            self._announce(sm.current_state, self._message(sm.current_state, sm.proposed_target))
         return self.snapshot()
+
+    def close(self) -> None:
+        if self._speaker is not None:
+            self._speaker.close()
 
     @property
     def latest_jpeg(self) -> Optional[bytes]:
         return self._latest_jpeg
+
+    def _announce(self, state: str, message: str) -> None:
+        """Speak once per FSM state change. Non-blocking, so holding the lock here is fine."""
+        if state != self._spoken_state:
+            self._spoken_state = state
+            if self._speaker is not None:
+                self._speaker.say(message)
 
     def _events(self) -> list[str]:
         return [
@@ -201,21 +248,39 @@ def _target_label(target: Optional[dict[str, Any]]) -> Optional[str]:
     return target.get("label") if target else None
 
 
-def create_app(pipeline: Optional[GesturePipeline] = None) -> FastAPI:
-    """Build the app. Tests pass their own pipeline; production builds one at startup."""
+def create_app(pipeline: Optional[GesturePipeline] = None, camera: Optional[CameraSource] = None) -> FastAPI:
+    """Build the app. Tests pass their own pipeline and, if they want the loop, a camera.
+    Production passes neither: both are built at startup from the environment."""
     token = os.environ.get("SERBOT_TOKEN") or None
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
+        speaker = Speaker() if _env_flag("SERBOT_SPEAK") else None
         if pipeline is None:
             mock = _env_flag("SERBOT_MOCK_DETECTOR")
             logger.info("Loading GesturePipeline (mock detector=%s)...", mock)
-            app.state.service = InferenceService(GesturePipeline(use_mock_detector=mock))
+            max_hands = int(os.environ.get("SERBOT_MAX_HANDS") or 2)
+            svc = InferenceService(GesturePipeline(use_mock_detector=mock, max_hands=max_hands), speaker)
+            source = camera or _camera_from_env()
         else:
-            app.state.service = InferenceService(pipeline)
+            svc = InferenceService(pipeline, speaker)
+            source = camera
+        app.state.service = svc
+        app.state.camera = source
+        app.state.loop = None
+        if source is not None:
+            source.start()
+            app.state.loop = CameraLoop(source, lambda frame, stamp, frame_id: svc.process(frame, stamp, frame_id, live=True),
+                                        paused=lambda: svc.dev_streams > 0).start()
         logger.info("Server ready.")
         yield
-        app.state.service.pipeline.hand_extractor.close()
+        if app.state.loop is not None:
+            app.state.loop.stop()
+        if source is not None:
+            source.stop()
+        svc.close()
+        svc.pipeline.detector.close()
+        svc.pipeline.hand_extractor.close()
 
     app = FastAPI(title="GestureGrasp Server", lifespan=lifespan)
 
@@ -236,7 +301,16 @@ def create_app(pipeline: Optional[GesturePipeline] = None) -> FastAPI:
             "detector_device": p.detector.device,
             "feature_version": p.feature_version,
             "robot": type(p.robot).__name__,
+            "camera": request.app.state.camera.status()["state"] if request.app.state.camera else "disabled",
         }
+
+    @app.get("/camera")
+    def camera_status(request: Request):
+        """Source state, fps, frame age, ESP32 /status data, and how fast the loop keeps up."""
+        source, loop = request.app.state.camera, request.app.state.loop
+        if source is None:
+            return {"state": "disabled"}
+        return {**source.status(), "loop": loop.stats()}
 
     @app.post("/infer")
     async def infer(request: Request):
@@ -252,7 +326,7 @@ def create_app(pipeline: Optional[GesturePipeline] = None) -> FastAPI:
 
     @app.get("/latest")
     def latest(request: Request):
-        """Last frame's full result, whoever sent it (lets the playground watch the Pi's stream)."""
+        """Last frame's full result, whichever source it came from."""
         return service(request).latest_result or {"hand_detected": False, "waiting": True}
 
     @app.get("/config")
@@ -310,7 +384,8 @@ def create_app(pipeline: Optional[GesturePipeline] = None) -> FastAPI:
         await ws.accept()
         svc = service(ws)
         client = f"{ws.client.host}:{ws.client.port}" if ws.client else "unknown"
-        logger.info("Camera client connected: %s", client)
+        logger.info("Development stream connected: %s", client)
+        svc.dev_streams += 1
         try:
             while True:
                 data = await ws.receive_bytes()
@@ -318,10 +393,12 @@ def create_app(pipeline: Optional[GesturePipeline] = None) -> FastAPI:
                 if frame is None:
                     await ws.send_json({"error": "undecodable frame"})
                     continue
-                result = await run_in_threadpool(svc.process, frame)
+                result = await run_in_threadpool(svc.process, frame, None, None, True)
                 await ws.send_json(result)
         except WebSocketDisconnect:
-            logger.info("Camera client disconnected: %s", client)
+            logger.info("Development stream disconnected: %s", client)
+        finally:
+            svc.dev_streams -= 1
 
     @app.get("/video")
     async def video(request: Request):
@@ -339,6 +416,10 @@ def create_app(pipeline: Optional[GesturePipeline] = None) -> FastAPI:
         return StreamingResponse(frames(), media_type="multipart/x-mixed-replace; boundary=frame")
 
     @app.get("/", response_class=HTMLResponse)
+    def index():
+        return playground()
+
+    @app.get("/viewer", response_class=HTMLResponse)
     def viewer():
         return VIEWER_HTML
 
@@ -355,12 +436,12 @@ VIEWER_HTML = """<!doctype html>
  button{font-size:1.4em;padding:12px 28px;background:#c00;color:#fff;border:0;border-radius:6px;cursor:pointer}
  pre{background:#222;padding:8px;max-width:520px;white-space:pre-wrap}
 </style></head><body>
-<h2>GestureGrasp &mdash; server view</h2>
+<h2>GestureGrasp</h2>
 <div id="msg">&hellip;</div>
 <div class="row">
- <img src="/video" alt="Waiting for camera frames from the Pi">
+ <img src="/video" alt="Waiting for frames from the ESP32-CAM">
  <div><button onclick="fetch('/stop',{method:'POST'})">EMERGENCY STOP</button>
- <button style="background:#444" onclick="fetch('/reset',{method:'POST'})">Reset</button>
+ <button style="background:#444" onclick="fetch('/reset'+location.search,{method:'POST'})">Reset</button>
  <pre id="state"></pre></div>
 </div>
 <script>

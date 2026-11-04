@@ -46,7 +46,7 @@ while asleep.
 
 At any moment: ✋ **Stop** halts the robot, ✌️ **Peace** cancels and sends it home.
 
-The prompts in quotes are what the Pi prints, and says aloud with `--speak`.
+The prompts in quotes appear on the web page. The Pi says them aloud with `--speak`, and so does the page with *Speak prompts here*.
 
 ## Objects you can point at
 

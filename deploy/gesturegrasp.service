@@ -1,0 +1,28 @@
+# Starts GestureGrasp when the Raspberry Pi 5 boots, and restarts it if it stops.
+#
+# Install:
+#   1. Edit User, WorkingDirectory and ExecStart below if yours differ.
+#   2. sudo cp deploy/gesturegrasp.service /etc/systemd/system/
+#   3. sudo systemctl daemon-reload && sudo systemctl enable --now gesturegrasp
+#   Logs: journalctl -u gesturegrasp -f
+#
+# Secrets and settings go in /etc/default/gesturegrasp, one per line, so they stay out of this file:
+#   SERBOT_TOKEN=...
+#   SERBOT_SPEAK=1
+#   SERBOT_FLIP=none
+
+[Unit]
+Description=GestureGrasp (ESP32-CAM to Raspberry Pi 5 to web page)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=pi
+WorkingDirectory=/home/pi/serbot
+EnvironmentFile=-/etc/default/gesturegrasp
+ExecStart=/home/pi/serbot/.venv/bin/python -m server --host 0.0.0.0 --port 8000 --camera-url http://esp32cam.local:81/stream
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

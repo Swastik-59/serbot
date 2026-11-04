@@ -2,7 +2,8 @@
 
 > This is a history log. Entries are kept as written; where one names code that DEC-017 removed
 > (the Streamlit app, the scenario simulator, feature set 1.0, the image downloader, `main.py`),
-> it records why that existed at the time.
+> or that DEC-018 replaced (`pi_client/`, the camera module on the Pi, a second machine running the
+> models), it records why that existed at the time.
 
 ## DEC-001: Execution Environment & Python Stack
 - **Context:** System is Windows with Python 3.11.9.
@@ -96,3 +97,19 @@
   - `.agents/`, `.claude/` and `skills-lock.json`, which are coding-agent tooling, not project code.
 - `intents.yaml` keeps one `min_conf` per gesture (the duplicate `default_threshold` is gone).
 - The Pi client gained `--speak` (espeak-ng) and a systemd unit for autostart.
+
+## DEC-018: Fully on the edge: ESP32-CAM to Raspberry Pi 5 to web page
+- **Context:** The system needed a Pi with a Pi camera module plus a laptop with a GPU. The target is two devices: an AI-Thinker ESP32-CAM and a Raspberry Pi 5, with any browser as the screen. The trained model, gesture semantics, thresholds, FSM and robot interface stay as they are.
+- **ESP32-CAM instead of the Pi camera module:** it is cheap, has its own Wi-Fi, and can sit anywhere in the room away from the Pi. `pi_client/` and picamera2 are removed.
+- **All inference on the Pi:** a loop in the FastAPI lifespan takes the newest frame, runs `GesturePipeline` and stores the result and annotated JPEG. Browsers only watch. `/infer` and `/ws/stream` stay as development endpoints, and the loop pauses while a `/ws/stream` client is connected so two sources never feed one FSM.
+- **YOLO decoupled from the gesture loop:** STOP has a 0.25 s hold, so it must not wait for object boxes. YOLO runs on its own low-priority thread at 3 Hz with `imgsz=320`, and the loop reuses the last boxes. Boxes can be a few frames old, which suits objects that are not moving. `/infer` still detects synchronously, because one photo has no later frame to catch up on.
+- **Latest-frame-only capture:** a one-frame slot, no queue. Frames that arrive while the pipeline is busy are replaced and never decoded, so slow inference lowers the frame rate instead of adding delay. Old frames would fire commands late, which is worse than fewer frames.
+- **`CAMERA_GRAB_LATEST`:** the same rule on the ESP32, so `esp_camera_fb_get()` never returns a stale queued frame.
+- **MJPEG parsed by hand, not `cv2.VideoCapture`:** FFmpeg's internal buffering adds unseen latency, and a dead stream can block `read()` with no usable timeout. Reading with `requests` and `read1()` gives real timeouts, clean reconnects with exponential backoff, and a `/capture` fallback. `read1()` also avoids `iter_content`, which can hold a finished frame back until the next one arrives.
+- **VGA 640x480, quality 12 by default:** at QVGA a hand at 1-2 m is too small for MediaPipe. The firmware starts with UXGA-sized buffers so frame size can change at run time, and falls back to VGA then QVGA if that much memory cannot be found.
+- **MediaPipe 0.10.14 instead of 0.10.11:** 0.10.11 has no aarch64 wheel. Compared on 1,350 HaGRID photos (x86), both found hands in the same 1,251, the landmarks matched to five decimal places, and the classifier agreed on all of them. protobuf must stay at 4.25.x.
+- **NumPy classifier (`models/mlp_weights.npz`):** the same weights, so the classifier needs neither torch nor unpickling. Max abs probability difference is 1.6e-6. It stores hashes of the joblib files, so a stale export after a retrain is ignored, not trusted.
+- **`max_num_hands` stays 2:** it is what lets a resting hand sit in view (DEC-013), even though MediaPipe then runs its palm detector on every frame, about twice the cost. `--max-hands 1` is an opt-in for a Pi that falls short of 10 fps.
+- **Lost hands also expire by time:** the 2-frame rule forgets a hand after 0.2 s at the evaluated 15 fps, but it would stretch to 0.375 s at 8 fps. The engine now also forgets it after 0.2 s of wall-clock time, so a slow Pi behaves as evaluated. Behaviour at 15 fps and above is unchanged. Hold times were already wall-clock.
+- **Ultralytics auto-install turned off in `export_yolo_pi.py`:** mid-export it upgraded protobuf and torch, which broke MediaPipe and made YOLO fail on every frame. The NCNN exporters are pinned in `requirements-pi.txt` instead. ONNX needs protobuf 6.31 or newer, which cannot share an environment with MediaPipe, so it stays opt-in and in a separate venv.
+- **Trade-off:** if the camera is lost, frames stop, so the FSM and simulated robot pause and STOP gestures cannot be seen. `POST /stop` still works. A real robot must stop itself when `/camera` reports `lost`; that belongs in the SerBot driver.

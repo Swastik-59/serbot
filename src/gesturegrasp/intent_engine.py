@@ -5,7 +5,7 @@ Implements:
 - EMA probability smoothing (alpha=0.6)
 - Top-1 vs Runner-up confidence margin gating (>=0.20)
 - Hold-to-fire temporal integration
-- Dropped frame tolerance (max 2 consecutive frames)
+- Dropped frame tolerance (max 2 consecutive frames, and never longer than at the 15 fps it was evaluated at)
 - Cooldown refractory period (1.0 sec)
 - Emergency STOP priority override
 - FSM state gating
@@ -21,6 +21,10 @@ from typing import Any, Dict, List, Optional, Tuple
 import yaml
 
 logger = logging.getLogger("gesturegrasp.intent_engine")
+
+# The evaluation ran at 15 fps, where the frame limit forgets a hand after (2 + 1) / 15 = 0.2 s. On a Pi
+# at 8 fps the same limit would bridge 0.375 s without seeing a hand, so a lost hand also expires by time.
+EVALUATED_FPS = 15.0
 
 
 @dataclass
@@ -56,6 +60,7 @@ class IntentEngine:
         self.margin_threshold = engine_cfg.get("margin_threshold", 0.20)
         self.cooldown_seconds = engine_cfg.get("cooldown_seconds", 1.00)
         self.max_dropped_frames = engine_cfg.get("max_dropped_frames", 2)
+        self.max_dropped_seconds = (self.max_dropped_frames + 1) / EVALUATED_FPS
         self.stop_priority = engine_cfg.get("stop_priority", True)
 
         self.transitions = cfg["state_machine"]["transitions"]
@@ -65,6 +70,7 @@ class IntentEngine:
         self._candidate_gesture: Optional[str] = None
         self._candidate_start_time: float = 0.0
         self._dropped_frames: int = 0
+        self._last_hand_time: Optional[float] = None
         self._last_fire_time: float = -1000.0
         self._last_fired_intent: Optional[str] = None
 
@@ -74,6 +80,7 @@ class IntentEngine:
         self._candidate_gesture = None
         self._candidate_start_time = 0.0
         self._dropped_frames = 0
+        self._last_hand_time = None
         self._last_fire_time = -1000.0
         self._last_fired_intent = None
 
@@ -96,7 +103,10 @@ class IntentEngine:
 
         if not hand_detected or not raw_probs:
             self._dropped_frames += 1
-            if self._dropped_frames > self.max_dropped_frames:
+            gap = None if self._last_hand_time is None else now - self._last_hand_time
+            hand_gone = self._dropped_frames > self.max_dropped_frames or (
+                gap is not None and gap >= self.max_dropped_seconds)
+            if hand_gone:
                 self._candidate_gesture = None
                 self._candidate_start_time = 0.0
                 self._smoothed_probs.clear()
@@ -110,12 +120,13 @@ class IntentEngine:
                 hold_progress=0.0,
                 intent_fired=False,
                 gated=False,
-                reason="No hand detected (buffer active)" if self._dropped_frames <= self.max_dropped_frames else "No hand detected",
+                reason="No hand detected" if hand_gone else "No hand detected (buffer active)",
                 timestamp=now,
             )
 
         # Hand is detected: reset dropped frame counter
         self._dropped_frames = 0
+        self._last_hand_time = now
 
         # Step 1: Exponential Moving Average (EMA) smoothing
         for gesture_name, prob in raw_probs.items():

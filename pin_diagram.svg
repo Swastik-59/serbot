@@ -1,318 +1,265 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="2240" viewBox="0 0 1800 2240">
-<rect width="1800" height="2240" fill="white"/>
-<text x="900.0" y="92" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="46" fill="#222" font-weight="700" text-anchor="middle" >GestureGrasp: hardware pin diagram</text>
-<text x="900.0" y="135" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="21" fill="#6b6b6b" font-weight="normal" text-anchor="middle" >ESP32-CAM camera  ·  Raspberry Pi client  ·  laptop server  ·  SerBot robot</text>
-<text x="350" y="183" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="22" fill="#333" font-weight="600" text-anchor="middle" >Raspberry Pi 4 / 5</text>
-<rect x="240" y="200" width="220" height="750" rx="12" fill="#fdf3e1" stroke="#c8902e" stroke-width="2.5"/>
-<text x="350" y="245" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="17" fill="#8a5a12" font-weight="600" text-anchor="middle" >40-pin GPIO header</text>
-<text x="350" y="270" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="15" fill="#8a5a12" font-weight="normal" text-anchor="middle" >pins 1–26 shown</text>
-<rect x="282" y="302" width="136" height="632" rx="6" fill="#2f2f2f" stroke="#2f2f2f" stroke-width="1"/>
-<rect x="295" y="315" width="30" height="30" rx="3" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
-<text x="310" y="335" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle" >1</text>
-<circle cx="390" cy="330" r="15" fill="#e9c46a" stroke="#d64545" stroke-width="3"/>
-<text x="390" y="335" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle" >2</text>
-<rect x="65" y="315" width="160" height="30" rx="15" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
-<text x="145.0" y="335" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle" >3V3</text>
-<line x1="225" y1="330" x2="295" y2="330" stroke="#d9d6cf" stroke-width="1.2"/>
-<rect x="475" y="315" width="160" height="30" rx="15" fill="#d6454522" stroke="#d64545" stroke-width="2"/>
-<text x="555.0" y="335" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#1f1f1f" font-weight="600" text-anchor="middle" >5V</text>
-<line x1="405" y1="330" x2="475" y2="330" stroke="#d64545" stroke-width="3"/>
-<circle cx="310" cy="378" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
-<text x="310" y="383" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle" >3</text>
-<circle cx="390" cy="378" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
-<text x="390" y="383" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle" >4</text>
-<rect x="65" y="363" width="160" height="30" rx="15" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
-<text x="145.0" y="383" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle" >GPIO2 · SDA</text>
-<line x1="225" y1="378" x2="295" y2="378" stroke="#d9d6cf" stroke-width="1.2"/>
-<rect x="475" y="363" width="160" height="30" rx="15" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
-<text x="555.0" y="383" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle" >5V</text>
-<line x1="405" y1="378" x2="475" y2="378" stroke="#d9d6cf" stroke-width="1.2"/>
-<circle cx="310" cy="426" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
-<text x="310" y="431" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle" >5</text>
-<circle cx="390" cy="426" r="15" fill="#e9c46a" stroke="#3a3a3a" stroke-width="3"/>
-<text x="390" y="431" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle" >6</text>
-<rect x="65" y="411" width="160" height="30" rx="15" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
-<text x="145.0" y="431" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle" >GPIO3 · SCL</text>
-<line x1="225" y1="426" x2="295" y2="426" stroke="#d9d6cf" stroke-width="1.2"/>
-<rect x="475" y="411" width="160" height="30" rx="15" fill="#3a3a3a22" stroke="#3a3a3a" stroke-width="2"/>
-<text x="555.0" y="431" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#1f1f1f" font-weight="600" text-anchor="middle" >GND</text>
-<line x1="405" y1="426" x2="475" y2="426" stroke="#3a3a3a" stroke-width="3"/>
-<circle cx="310" cy="474" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
-<text x="310" y="479" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle" >7</text>
-<circle cx="390" cy="474" r="15" fill="#e9c46a" stroke="#2e9b5f" stroke-width="3"/>
-<text x="390" y="479" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle" >8</text>
-<rect x="65" y="459" width="160" height="30" rx="15" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
-<text x="145.0" y="479" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle" >GPIO4</text>
-<line x1="225" y1="474" x2="295" y2="474" stroke="#d9d6cf" stroke-width="1.2"/>
-<rect x="475" y="459" width="160" height="30" rx="15" fill="#2e9b5f22" stroke="#2e9b5f" stroke-width="2"/>
-<text x="555.0" y="479" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#1f1f1f" font-weight="600" text-anchor="middle" >GPIO14 · TXD</text>
-<line x1="405" y1="474" x2="475" y2="474" stroke="#2e9b5f" stroke-width="3"/>
-<circle cx="310" cy="522" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
-<text x="310" y="527" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle" >9</text>
-<circle cx="390" cy="522" r="15" fill="#e9c46a" stroke="#3a6fd8" stroke-width="3"/>
-<text x="390" y="527" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle" >10</text>
-<rect x="65" y="507" width="160" height="30" rx="15" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
-<text x="145.0" y="527" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle" >GND</text>
-<line x1="225" y1="522" x2="295" y2="522" stroke="#d9d6cf" stroke-width="1.2"/>
-<rect x="475" y="507" width="160" height="30" rx="15" fill="#3a6fd822" stroke="#3a6fd8" stroke-width="2"/>
-<text x="555.0" y="527" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#1f1f1f" font-weight="600" text-anchor="middle" >GPIO15 · RXD</text>
-<line x1="405" y1="522" x2="475" y2="522" stroke="#3a6fd8" stroke-width="3"/>
-<circle cx="310" cy="570" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
-<text x="310" y="575" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle" >11</text>
-<circle cx="390" cy="570" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
-<text x="390" y="575" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle" >12</text>
-<rect x="65" y="555" width="160" height="30" rx="15" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
-<text x="145.0" y="575" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle" >GPIO17</text>
-<line x1="225" y1="570" x2="295" y2="570" stroke="#d9d6cf" stroke-width="1.2"/>
-<rect x="475" y="555" width="160" height="30" rx="15" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
-<text x="555.0" y="575" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle" >GPIO18</text>
-<line x1="405" y1="570" x2="475" y2="570" stroke="#d9d6cf" stroke-width="1.2"/>
-<circle cx="310" cy="618" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
-<text x="310" y="623" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle" >13</text>
-<circle cx="390" cy="618" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
-<text x="390" y="623" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle" >14</text>
-<rect x="65" y="603" width="160" height="30" rx="15" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
-<text x="145.0" y="623" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle" >GPIO27</text>
-<line x1="225" y1="618" x2="295" y2="618" stroke="#d9d6cf" stroke-width="1.2"/>
-<rect x="475" y="603" width="160" height="30" rx="15" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
-<text x="555.0" y="623" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle" >GND</text>
-<line x1="405" y1="618" x2="475" y2="618" stroke="#d9d6cf" stroke-width="1.2"/>
-<circle cx="310" cy="666" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
-<text x="310" y="671" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle" >15</text>
-<circle cx="390" cy="666" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
-<text x="390" y="671" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle" >16</text>
-<rect x="65" y="651" width="160" height="30" rx="15" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
-<text x="145.0" y="671" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle" >GPIO22</text>
-<line x1="225" y1="666" x2="295" y2="666" stroke="#d9d6cf" stroke-width="1.2"/>
-<rect x="475" y="651" width="160" height="30" rx="15" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
-<text x="555.0" y="671" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle" >GPIO23</text>
-<line x1="405" y1="666" x2="475" y2="666" stroke="#d9d6cf" stroke-width="1.2"/>
-<circle cx="310" cy="714" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
-<text x="310" y="719" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle" >17</text>
-<circle cx="390" cy="714" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
-<text x="390" y="719" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle" >18</text>
-<rect x="65" y="699" width="160" height="30" rx="15" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
-<text x="145.0" y="719" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle" >3V3</text>
-<line x1="225" y1="714" x2="295" y2="714" stroke="#d9d6cf" stroke-width="1.2"/>
-<rect x="475" y="699" width="160" height="30" rx="15" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
-<text x="555.0" y="719" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle" >GPIO24</text>
-<line x1="405" y1="714" x2="475" y2="714" stroke="#d9d6cf" stroke-width="1.2"/>
-<circle cx="310" cy="762" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
-<text x="310" y="767" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle" >19</text>
-<circle cx="390" cy="762" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
-<text x="390" y="767" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle" >20</text>
-<rect x="65" y="747" width="160" height="30" rx="15" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
-<text x="145.0" y="767" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle" >GPIO10 · MOSI</text>
-<line x1="225" y1="762" x2="295" y2="762" stroke="#d9d6cf" stroke-width="1.2"/>
-<rect x="475" y="747" width="160" height="30" rx="15" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
-<text x="555.0" y="767" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle" >GND</text>
-<line x1="405" y1="762" x2="475" y2="762" stroke="#d9d6cf" stroke-width="1.2"/>
-<circle cx="310" cy="810" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
-<text x="310" y="815" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle" >21</text>
-<circle cx="390" cy="810" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
-<text x="390" y="815" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle" >22</text>
-<rect x="65" y="795" width="160" height="30" rx="15" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
-<text x="145.0" y="815" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle" >GPIO9 · MISO</text>
-<line x1="225" y1="810" x2="295" y2="810" stroke="#d9d6cf" stroke-width="1.2"/>
-<rect x="475" y="795" width="160" height="30" rx="15" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
-<text x="555.0" y="815" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle" >GPIO25</text>
-<line x1="405" y1="810" x2="475" y2="810" stroke="#d9d6cf" stroke-width="1.2"/>
-<circle cx="310" cy="858" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
-<text x="310" y="863" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle" >23</text>
-<circle cx="390" cy="858" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
-<text x="390" y="863" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle" >24</text>
-<rect x="65" y="843" width="160" height="30" rx="15" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
-<text x="145.0" y="863" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle" >GPIO11 · SCLK</text>
-<line x1="225" y1="858" x2="295" y2="858" stroke="#d9d6cf" stroke-width="1.2"/>
-<rect x="475" y="843" width="160" height="30" rx="15" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
-<text x="555.0" y="863" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle" >GPIO8 · CE0</text>
-<line x1="405" y1="858" x2="475" y2="858" stroke="#d9d6cf" stroke-width="1.2"/>
-<circle cx="310" cy="906" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
-<text x="310" y="911" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle" >25</text>
-<circle cx="390" cy="906" r="15" fill="#e9c46a" stroke="#e08a1e" stroke-width="3"/>
-<text x="390" y="911" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle" >26</text>
-<rect x="65" y="891" width="160" height="30" rx="15" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
-<text x="145.0" y="911" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle" >GND</text>
-<line x1="225" y1="906" x2="295" y2="906" stroke="#d9d6cf" stroke-width="1.2"/>
-<rect x="475" y="891" width="160" height="30" rx="15" fill="#e08a1e22" stroke="#e08a1e" stroke-width="2"/>
-<text x="555.0" y="911" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#1f1f1f" font-weight="600" text-anchor="middle" >GPIO7 · CE1</text>
-<line x1="405" y1="906" x2="475" y2="906" stroke="#e08a1e" stroke-width="3"/>
-<text x="350" y="985" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="15" fill="#6b6b6b" font-weight="normal" text-anchor="middle" font-style="italic">pins 27–40 not used</text>
-<text x="1200" y="183" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="22" fill="#333" font-weight="600" text-anchor="middle" >ESP32-CAM (AI-Thinker)</text>
-<rect x="1060" y="200" width="280" height="725" rx="12" fill="#fdf3e1" stroke="#c8902e" stroke-width="2.5"/>
-<text x="1200" y="245" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="16" fill="#8a5a12" font-weight="600" text-anchor="middle" >top view, camera up</text>
-<text x="1200" y="270" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="15" fill="#8a5a12" font-weight="normal" text-anchor="middle" >OV2640 · Wi-Fi</text>
-<rect x="1106" y="304" width="48" height="500" rx="6" fill="#2f2f2f" stroke="#2f2f2f" stroke-width="1"/>
-<rect x="1246" y="304" width="48" height="500" rx="6" fill="#2f2f2f" stroke="#2f2f2f" stroke-width="1"/>
-<circle cx="1130" cy="330" r="15" fill="#e9c46a" stroke="#d64545" stroke-width="3"/>
-<circle cx="1270" cy="330" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
-<rect x="885" y="315" width="160" height="30" rx="15" fill="#d6454522" stroke="#d64545" stroke-width="2"/>
-<text x="965.0" y="335" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#1f1f1f" font-weight="600" text-anchor="middle" >5V</text>
-<line x1="1045" y1="330" x2="1115" y2="330" stroke="#d64545" stroke-width="3"/>
-<rect x="1355" y="315" width="160" height="30" rx="15" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
-<text x="1435.0" y="335" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle" >3V3</text>
-<line x1="1285" y1="330" x2="1355" y2="330" stroke="#d9d6cf" stroke-width="1.2"/>
-<circle cx="1130" cy="394" r="15" fill="#e9c46a" stroke="#3a3a3a" stroke-width="3"/>
-<circle cx="1270" cy="394" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
-<rect x="885" y="379" width="160" height="30" rx="15" fill="#3a3a3a22" stroke="#3a3a3a" stroke-width="2"/>
-<text x="965.0" y="399" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#1f1f1f" font-weight="600" text-anchor="middle" >GND</text>
-<line x1="1045" y1="394" x2="1115" y2="394" stroke="#3a3a3a" stroke-width="3"/>
-<rect x="1355" y="379" width="160" height="30" rx="15" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
-<text x="1435.0" y="399" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle" >IO16</text>
-<line x1="1285" y1="394" x2="1355" y2="394" stroke="#d9d6cf" stroke-width="1.2"/>
-<circle cx="1130" cy="458" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
-<circle cx="1270" cy="458" r="15" fill="#e9c46a" stroke="#e08a1e" stroke-width="3"/>
-<rect x="885" y="443" width="160" height="30" rx="15" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
-<text x="965.0" y="463" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle" >IO12</text>
-<line x1="1045" y1="458" x2="1115" y2="458" stroke="#d9d6cf" stroke-width="1.2"/>
-<rect x="1355" y="443" width="160" height="30" rx="15" fill="#e08a1e22" stroke="#e08a1e" stroke-width="2"/>
-<text x="1435.0" y="463" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#1f1f1f" font-weight="600" text-anchor="middle" >IO0 · boot</text>
-<line x1="1285" y1="458" x2="1355" y2="458" stroke="#e08a1e" stroke-width="3"/>
-<circle cx="1130" cy="522" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
-<circle cx="1270" cy="522" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
-<rect x="885" y="507" width="160" height="30" rx="15" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
-<text x="965.0" y="527" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle" >IO13</text>
-<line x1="1045" y1="522" x2="1115" y2="522" stroke="#d9d6cf" stroke-width="1.2"/>
-<rect x="1355" y="507" width="160" height="30" rx="15" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
-<text x="1435.0" y="527" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle" >GND</text>
-<line x1="1285" y1="522" x2="1355" y2="522" stroke="#d9d6cf" stroke-width="1.2"/>
-<circle cx="1130" cy="586" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
-<circle cx="1270" cy="586" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
-<rect x="885" y="571" width="160" height="30" rx="15" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
-<text x="965.0" y="591" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle" >IO15</text>
-<line x1="1045" y1="586" x2="1115" y2="586" stroke="#d9d6cf" stroke-width="1.2"/>
-<rect x="1355" y="571" width="160" height="30" rx="15" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
-<text x="1435.0" y="591" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle" >VCC out</text>
-<line x1="1285" y1="586" x2="1355" y2="586" stroke="#d9d6cf" stroke-width="1.2"/>
-<circle cx="1130" cy="650" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
-<circle cx="1270" cy="650" r="15" fill="#e9c46a" stroke="#2e9b5f" stroke-width="3"/>
-<rect x="885" y="635" width="160" height="30" rx="15" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
-<text x="965.0" y="655" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle" >IO14</text>
-<line x1="1045" y1="650" x2="1115" y2="650" stroke="#d9d6cf" stroke-width="1.2"/>
-<rect x="1355" y="635" width="160" height="30" rx="15" fill="#2e9b5f22" stroke="#2e9b5f" stroke-width="2"/>
-<text x="1435.0" y="655" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#1f1f1f" font-weight="600" text-anchor="middle" >U0R · RX</text>
-<line x1="1285" y1="650" x2="1355" y2="650" stroke="#2e9b5f" stroke-width="3"/>
-<circle cx="1130" cy="714" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
-<circle cx="1270" cy="714" r="15" fill="#e9c46a" stroke="#3a6fd8" stroke-width="3"/>
-<rect x="885" y="699" width="160" height="30" rx="15" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
-<text x="965.0" y="719" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle" >IO2</text>
-<line x1="1045" y1="714" x2="1115" y2="714" stroke="#d9d6cf" stroke-width="1.2"/>
-<rect x="1355" y="699" width="160" height="30" rx="15" fill="#3a6fd822" stroke="#3a6fd8" stroke-width="2"/>
-<text x="1435.0" y="719" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#1f1f1f" font-weight="600" text-anchor="middle" >U0T · TX</text>
-<line x1="1285" y1="714" x2="1355" y2="714" stroke="#3a6fd8" stroke-width="3"/>
-<circle cx="1130" cy="778" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
-<circle cx="1270" cy="778" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
-<rect x="885" y="763" width="160" height="30" rx="15" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
-<text x="965.0" y="783" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle" >IO4 · flash LED</text>
-<line x1="1045" y1="778" x2="1115" y2="778" stroke="#d9d6cf" stroke-width="1.2"/>
-<rect x="1355" y="763" width="160" height="30" rx="15" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
-<text x="1435.0" y="783" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle" >GND</text>
-<line x1="1285" y1="778" x2="1355" y2="778" stroke="#d9d6cf" stroke-width="1.2"/>
-<rect x="1160" y="830" width="80" height="70" rx="8" fill="#2f2f2f"/>
-<circle cx="1200" cy="865" r="24" fill="#555" stroke="#888" stroke-width="3"/>
-<circle cx="1200" cy="865" r="10" fill="#1b2a4a"/>
-<path d="M635,330 L885,330" fill="none" stroke="#d64545" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
-<path d="M635,426 L840,426 L840,394 L885,394" fill="none" stroke="#3a3a3a" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
-<path d="M635,906 L700,906 L700,1080 L1650,1080 L1650,458 L1515,458" fill="none" stroke="#e08a1e" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
-<path d="M635,474 L740,474 L740,1040 L1610,1040 L1610,650 L1515,650" fill="none" stroke="#2e9b5f" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
-<path d="M635,522 L780,522 L780,1000 L1570,1000 L1570,714 L1515,714" fill="none" stroke="#3a6fd8" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>
-<circle cx="635" cy="330" r="6" fill="#d64545" stroke="white" stroke-width="2"/>
-<circle cx="885" cy="330" r="6" fill="#d64545" stroke="white" stroke-width="2"/>
-<circle cx="635" cy="426" r="6" fill="#3a3a3a" stroke="white" stroke-width="2"/>
-<circle cx="885" cy="394" r="6" fill="#3a3a3a" stroke="white" stroke-width="2"/>
-<circle cx="635" cy="906" r="6" fill="#e08a1e" stroke="white" stroke-width="2"/>
-<circle cx="1515" cy="458" r="6" fill="#e08a1e" stroke="white" stroke-width="2"/>
-<circle cx="635" cy="474" r="6" fill="#2e9b5f" stroke="white" stroke-width="2"/>
-<circle cx="1515" cy="650" r="6" fill="#2e9b5f" stroke="white" stroke-width="2"/>
-<circle cx="635" cy="522" r="6" fill="#3a6fd8" stroke="white" stroke-width="2"/>
-<circle cx="1515" cy="714" r="6" fill="#3a6fd8" stroke="white" stroke-width="2"/>
-<text x="760" y="318" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="15" fill="#d64545" font-weight="700" text-anchor="middle" >5 V</text>
-<text x="700" y="414" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="15" fill="#3a3a3a" font-weight="700" text-anchor="middle" >GND</text>
-<text x="1110" y="1120" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="16" fill="#6b6b6b" font-weight="normal" text-anchor="middle" font-style="italic">Serial is crossed: Pi TXD → ESP U0R, ESP U0T → Pi RXD.  IO0 wire only matters when flashing.</text>
-<rect x="45" y="1168" width="1265" height="180" rx="16" fill="none" stroke="#4a7fc1" stroke-width="2.5" stroke-dasharray="10 8"/>
-<text x="68" y="1194" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="16" fill="#2a5a96" font-weight="700" text-anchor="start" >One shared Wi-Fi network (2.4 GHz): video and results both travel over it</text>
-<rect x="70" y="1210" width="300" height="120" rx="12" fill="#fdf3e1" stroke="#c8902e" stroke-width="2.5"/>
-<text x="220.0" y="1260" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="24" fill="#8a5a12" font-weight="700" text-anchor="middle" >ESP32-CAM</text>
-<text x="220.0" y="1292" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="16" fill="#8a5a12" font-weight="normal" text-anchor="middle" >camera, streams MJPEG</text>
-<rect x="530" y="1210" width="300" height="120" rx="12" fill="#fdf3e1" stroke="#c8902e" stroke-width="2.5"/>
-<text x="680.0" y="1260" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="24" fill="#8a5a12" font-weight="700" text-anchor="middle" >Raspberry Pi</text>
-<text x="680.0" y="1292" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="16" fill="#8a5a12" font-weight="normal" text-anchor="middle" >pi_client/client.py · speaker</text>
-<rect x="990" y="1210" width="300" height="120" rx="12" fill="#e3f4ea" stroke="#3e9a66" stroke-width="2.5"/>
-<text x="1140.0" y="1260" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="24" fill="#1d5c3a" font-weight="700" text-anchor="middle" >Laptop server</text>
-<text x="1140.0" y="1292" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="16" fill="#1d5c3a" font-weight="normal" text-anchor="middle" >python -m server · GPU model</text>
-<rect x="1450" y="1210" width="300" height="120" rx="12" fill="#efecfb" stroke="#6b4fbb" stroke-width="2.5"/>
-<text x="1600.0" y="1260" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="24" fill="#3f2c80" font-weight="700" text-anchor="middle" >SerBot</text>
-<text x="1600.0" y="1292" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="16" fill="#3f2c80" font-weight="normal" text-anchor="middle" >drive, arm, gripper · battery</text>
-<defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#555"/></marker><marker id="ahp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6b4fbb"/></marker><marker id="ahr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d64545"/></marker></defs>
-<line x1="375" y1="1265" x2="525" y2="1265" stroke="#555" stroke-width="3" stroke-dasharray="8 7" marker-end="url(#ah)"/>
-<text x="450" y="1233" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="15" fill="#444" font-weight="600" text-anchor="middle" >Wi-Fi</text>
-<text x="450" y="1251" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#6b6b6b" font-weight="normal" text-anchor="middle" >MJPEG</text>
-<text x="450" y="1293" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#6b6b6b" font-weight="normal" text-anchor="middle" >:81/stream</text>
-<line x1="835" y1="1265" x2="985" y2="1265" stroke="#555" stroke-width="3" stroke-dasharray="8 7" marker-start="url(#ah)" marker-end="url(#ah)"/>
-<text x="910" y="1233" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="15" fill="#444" font-weight="600" text-anchor="middle" >Wi-Fi</text>
-<text x="910" y="1251" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#6b6b6b" font-weight="normal" text-anchor="middle" >JPEG ⇄ JSON</text>
-<text x="910" y="1293" font-family="Consolas, 'Courier New', monospace" font-size="14" fill="#6b6b6b" font-weight="normal" text-anchor="middle" >/ws/stream</text>
-<line x1="1295" y1="1265" x2="1445" y2="1265" stroke="#6b4fbb" stroke-width="3" stroke-dasharray="8 7" marker-end="url(#ahp)"/>
-<text x="1370" y="1233" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="15" fill="#3f2c80" font-weight="600" text-anchor="middle" >commands</text>
-<text x="1370" y="1251" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#3f2c80" font-weight="normal" text-anchor="middle" >BaseRobot</text>
-<text x="1370" y="1293" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#3f2c80" font-weight="normal" text-anchor="middle" >link TBD</text>
-<path d="M1600,1330 L1600,1385 L680,1385 L680,1338" fill="none" stroke="#d64545" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
-<path d="M672,1346 L680,1332 L688,1346 z" fill="#d64545"/>
-<text x="1140" y="1412" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="16" fill="#d64545" font-weight="600" text-anchor="middle" >5 V regulated → Pi USB-C power in   (Pi 5: 5 A · Pi 4: 3 A)   + common GND</text>
-<text x="220" y="1372" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#6b6b6b" font-weight="normal" text-anchor="middle" font-style="italic">ESP32-CAM powered from Pi pin 2 (above)</text>
-<text x="70" y="1470" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="24" fill="#333" font-weight="700" text-anchor="start" >Wiring table</text>
-<rect x="60" y="1484" width="1680" height="40" rx="6" fill="#f3f2ee" stroke="#f3f2ee" stroke-width="0"/>
-<text x="78" y="1510" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="16" fill="#444" font-weight="700" text-anchor="start" >Wire</text>
-<text x="148" y="1510" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="16" fill="#444" font-weight="700" text-anchor="start" >From</text>
-<text x="408" y="1510" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="16" fill="#444" font-weight="700" text-anchor="start" >To</text>
-<text x="728" y="1510" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="16" fill="#444" font-weight="700" text-anchor="start" >Purpose</text>
-<line x1="80" y1="1552" x2="122" y2="1552" stroke="#d64545" stroke-width="6" stroke-linecap="round"/>
-<text x="148" y="1558" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="16" fill="#222" font-weight="600" text-anchor="start" >ESP32-CAM  5V</text>
-<text x="408" y="1558" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="16" fill="#222" font-weight="600" text-anchor="start" >Pi pin 2 · 5V</text>
-<text x="728" y="1558" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="16" fill="#333" font-weight="normal" text-anchor="start" >Powers the camera board. Use 5 V, not 3V3: Wi-Fi current peaks brown out the 3.3 V pin.</text>
-<rect x="60" y="1576" width="1680" height="46" rx="4" fill="#fafaf8" stroke="#fafaf8" stroke-width="0"/>
-<line x1="80" y1="1598" x2="122" y2="1598" stroke="#3a3a3a" stroke-width="6" stroke-linecap="round"/>
-<text x="148" y="1604" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="16" fill="#222" font-weight="600" text-anchor="start" >ESP32-CAM  GND</text>
-<text x="408" y="1604" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="16" fill="#222" font-weight="600" text-anchor="start" >Pi pin 6 · GND</text>
-<text x="728" y="1604" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="16" fill="#333" font-weight="normal" text-anchor="start" >Common ground. Serial does not work without it.</text>
-<line x1="80" y1="1644" x2="122" y2="1644" stroke="#2e9b5f" stroke-width="6" stroke-linecap="round"/>
-<text x="148" y="1650" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="16" fill="#222" font-weight="600" text-anchor="start" >Pi pin 8 · GPIO14 TXD</text>
-<text x="408" y="1650" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="16" fill="#222" font-weight="600" text-anchor="start" >ESP32-CAM  U0R (GPIO3)</text>
-<text x="728" y="1650" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="16" fill="#333" font-weight="normal" text-anchor="start" >Pi → ESP serial: flash firmware, send commands.</text>
-<rect x="60" y="1668" width="1680" height="46" rx="4" fill="#fafaf8" stroke="#fafaf8" stroke-width="0"/>
-<line x1="80" y1="1690" x2="122" y2="1690" stroke="#3a6fd8" stroke-width="6" stroke-linecap="round"/>
-<text x="148" y="1696" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="16" fill="#222" font-weight="600" text-anchor="start" >ESP32-CAM  U0T (GPIO1)</text>
-<text x="408" y="1696" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="16" fill="#222" font-weight="600" text-anchor="start" >Pi pin 10 · GPIO15 RXD</text>
-<text x="728" y="1696" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="16" fill="#333" font-weight="normal" text-anchor="start" >ESP → Pi serial: boot log and the camera's IP address.</text>
-<line x1="80" y1="1736" x2="122" y2="1736" stroke="#e08a1e" stroke-width="6" stroke-linecap="round"/>
-<text x="148" y="1742" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="16" fill="#222" font-weight="600" text-anchor="start" >Pi pin 26 · GPIO7</text>
-<text x="408" y="1742" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="16" fill="#222" font-weight="600" text-anchor="start" >ESP32-CAM  IO0</text>
-<text x="728" y="1742" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="16" fill="#333" font-weight="normal" text-anchor="start" >Drive LOW, then press RST = flash mode. Otherwise keep it an input: IO0 is also the camera clock.</text>
-<rect x="60" y="1760" width="1680" height="46" rx="4" fill="#fafaf8" stroke="#fafaf8" stroke-width="0"/>
-<line x1="80" y1="1782" x2="122" y2="1782" stroke="#d64545" stroke-width="6" stroke-linecap="round"/>
-<text x="148" y="1788" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="16" fill="#222" font-weight="600" text-anchor="start" >SerBot 5 V output</text>
-<text x="408" y="1788" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="16" fill="#222" font-weight="600" text-anchor="start" >Pi USB-C power</text>
-<text x="728" y="1788" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="16" fill="#333" font-weight="normal" text-anchor="start" >Regulated 5 V from the robot battery. Check SerBot's output rating first.</text>
-<text x="101" y="1834" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="13" fill="#6b6b6b" font-weight="normal" text-anchor="middle" >audio</text>
-<text x="148" y="1834" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="16" fill="#222" font-weight="600" text-anchor="start" >Pi 3.5 mm jack / USB</text>
-<text x="408" y="1834" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="16" fill="#222" font-weight="600" text-anchor="start" >Speaker</text>
-<text x="728" y="1834" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="16" fill="#333" font-weight="normal" text-anchor="start" >Spoken prompts (client.py --speak). The Pi 5 has no jack, so use a USB speaker there.</text>
-<rect x="60" y="1900" width="1680" height="281" rx="10" fill="#f7f9fd" stroke="#c9d6ef" stroke-width="1.5"/>
-<text x="84" y="1934" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="19" fill="#2a3f6b" font-weight="700" text-anchor="start" >Notes</text>
-<text x="84" y="1968" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="15" fill="#2a3f6b" font-weight="normal" text-anchor="start" >•  Both boards use 3.3 V logic, so the serial wires connect directly with no level shifter.</text>
-<text x="84" y="1996" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="15" fill="#2a3f6b" font-weight="normal" text-anchor="start" >•  Enable the Pi UART: sudo raspi-config → Interface Options → Serial Port → login shell No, hardware Yes. It appears as /dev/serial0.</text>
-<text x="84" y="2024" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="15" fill="#2a3f6b" font-weight="normal" text-anchor="start" >•  All video goes over the shared Wi-Fi; the wires carry only power and serial. Flash the CameraWebServer sketch (AI-Thinker), then on the Pi:</text>
-<text x="120" y="2052" font-family="Consolas, 'Courier New', monospace" font-size="15" fill="#2a3f6b" font-weight="normal" text-anchor="start" >python client.py --server ws://&lt;laptop-ip&gt;:8000/ws/stream --source http://&lt;esp32-ip&gt;:81/stream</text>
-<text x="84" y="2080" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="15" fill="#2a3f6b" font-weight="normal" text-anchor="start" >•  ESP32 radios are 2.4 GHz only, so the ESP32-CAM, Pi and laptop must all join the 2.4 GHz network (not a 5 GHz-only SSID).</text>
-<text x="84" y="2108" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="15" fill="#2a3f6b" font-weight="normal" text-anchor="start" >•  Each frame crosses the same Wi-Fi twice (ESP32 → Pi, then Pi → laptop). If it lags, set the ESP32 to VGA 640×480 or lower client.py --quality.</text>
-<text x="84" y="2136" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="15" fill="#2a3f6b" font-weight="normal" text-anchor="start" >•  GPIO7 is pulled high while the Pi boots, so the ESP32-CAM starts normally when both power on together.</text>
-<text x="84" y="2164" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="15" fill="#2a3f6b" font-weight="normal" text-anchor="start" >•  SerBot's control link is not in the code yet: the robot is simulated (robot/simulated.py) until a BaseRobot driver exists.</text>
-<rect x="470" y="2208" width="22" height="22" rx="4" fill="white" stroke="#c8902e" stroke-width="2.5"/>
-<text x="504" y="2226" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="19" fill="#333" font-weight="normal" text-anchor="start" >Pi-side device</text>
-<rect x="700" y="2208" width="22" height="22" rx="4" fill="white" stroke="#3e9a66" stroke-width="2.5"/>
-<text x="734" y="2226" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="19" fill="#333" font-weight="normal" text-anchor="start" >Laptop server</text>
-<rect x="930" y="2208" width="22" height="22" rx="4" fill="white" stroke="#6b4fbb" stroke-width="2.5"/>
-<text x="964" y="2226" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="19" fill="#333" font-weight="normal" text-anchor="start" >Robot</text>
-<line x1="1160" y1="2219" x2="1200" y2="2219" stroke="#555" stroke-width="3" stroke-dasharray="8 7"/>
-<text x="1212" y="2226" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="19" fill="#333" font-weight="normal" text-anchor="start" >wireless</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="2010" viewBox="0 0 1800 2010">
+<rect width="1800" height="2010" fill="white"/>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 Z" fill="#555"/></marker></defs>
+<text x="900" y="88" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="46" fill="#222" font-weight="700" text-anchor="middle">GestureGrasp: hardware pin diagram</text>
+<text x="900" y="130" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="22" fill="#6b6b6b" font-weight="normal" text-anchor="middle">ESP32-CAM camera  ·  Raspberry Pi 5  ·  any browser. Video travels over Wi-Fi: only power is wired.</text>
+<text x="330" y="182" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="24" fill="#333" font-weight="600" text-anchor="middle">Raspberry Pi 5</text>
+<rect x="230" y="198" width="200" height="700" rx="12" fill="#fdf3e1" stroke="#c8902e" stroke-width="2.5"/>
+<text x="330" y="236" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="17" fill="#8a5a12" font-weight="600" text-anchor="middle">40-pin GPIO header</text>
+<text x="330" y="260" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="15" fill="#8a5a12" font-weight="normal" text-anchor="middle">pins 1–26 shown</text>
+<rect x="262" y="278" width="136" height="600" rx="6" fill="#2f2f2f" stroke="#2f2f2f" stroke-width="1"/>
+<circle cx="290" cy="302" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
+<text x="290" y="307" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle">1</text>
+<circle cx="370" cy="302" r="15" fill="#e9c46a" stroke="#d64545" stroke-width="3"/>
+<text x="370" y="307" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle">2</text>
+<rect x="90" y="286" width="120" height="32" rx="16" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
+<text x="150.0" y="308" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle">3V3</text>
+<rect x="450" y="286" width="120" height="32" rx="16" fill="#d6454522" stroke="#d64545" stroke-width="2"/>
+<text x="510.0" y="308" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="15" fill="#1f1f1f" font-weight="600" text-anchor="middle">5V</text>
+<circle cx="290" cy="348" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
+<text x="290" y="353" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle">3</text>
+<circle cx="370" cy="348" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
+<text x="370" y="353" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle">4</text>
+<rect x="90" y="332" width="120" height="32" rx="16" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
+<text x="150.0" y="354" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle">GPIO2</text>
+<rect x="450" y="332" width="120" height="32" rx="16" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
+<text x="510.0" y="354" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle">5V</text>
+<circle cx="290" cy="394" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
+<text x="290" y="399" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle">5</text>
+<circle cx="370" cy="394" r="15" fill="#e9c46a" stroke="#2b2b2b" stroke-width="3"/>
+<text x="370" y="399" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle">6</text>
+<rect x="90" y="378" width="120" height="32" rx="16" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
+<text x="150.0" y="400" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle">GPIO3</text>
+<rect x="450" y="378" width="120" height="32" rx="16" fill="#2b2b2b22" stroke="#2b2b2b" stroke-width="2"/>
+<text x="510.0" y="400" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="15" fill="#1f1f1f" font-weight="600" text-anchor="middle">GND</text>
+<circle cx="290" cy="440" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
+<text x="290" y="445" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle">7</text>
+<circle cx="370" cy="440" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
+<text x="370" y="445" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle">8</text>
+<rect x="90" y="424" width="120" height="32" rx="16" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
+<text x="150.0" y="446" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle">GPIO4</text>
+<rect x="450" y="424" width="120" height="32" rx="16" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
+<text x="510.0" y="446" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle">GPIO14</text>
+<circle cx="290" cy="486" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
+<text x="290" y="491" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle">9</text>
+<circle cx="370" cy="486" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
+<text x="370" y="491" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle">10</text>
+<rect x="90" y="470" width="120" height="32" rx="16" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
+<text x="150.0" y="492" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle">GND</text>
+<rect x="450" y="470" width="120" height="32" rx="16" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
+<text x="510.0" y="492" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle">GPIO15</text>
+<circle cx="290" cy="532" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
+<text x="290" y="537" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle">11</text>
+<circle cx="370" cy="532" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
+<text x="370" y="537" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle">12</text>
+<rect x="90" y="516" width="120" height="32" rx="16" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
+<text x="150.0" y="538" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle">GPIO17</text>
+<rect x="450" y="516" width="120" height="32" rx="16" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
+<text x="510.0" y="538" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle">GPIO18</text>
+<circle cx="290" cy="578" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
+<text x="290" y="583" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle">13</text>
+<circle cx="370" cy="578" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
+<text x="370" y="583" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle">14</text>
+<rect x="90" y="562" width="120" height="32" rx="16" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
+<text x="150.0" y="584" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle">GPIO27</text>
+<rect x="450" y="562" width="120" height="32" rx="16" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
+<text x="510.0" y="584" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle">GND</text>
+<circle cx="290" cy="624" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
+<text x="290" y="629" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle">15</text>
+<circle cx="370" cy="624" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
+<text x="370" y="629" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle">16</text>
+<rect x="90" y="608" width="120" height="32" rx="16" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
+<text x="150.0" y="630" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle">GPIO22</text>
+<rect x="450" y="608" width="120" height="32" rx="16" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
+<text x="510.0" y="630" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle">GPIO23</text>
+<circle cx="290" cy="670" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
+<text x="290" y="675" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle">17</text>
+<circle cx="370" cy="670" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
+<text x="370" y="675" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle">18</text>
+<rect x="90" y="654" width="120" height="32" rx="16" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
+<text x="150.0" y="676" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle">3V3</text>
+<rect x="450" y="654" width="120" height="32" rx="16" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
+<text x="510.0" y="676" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle">GPIO24</text>
+<circle cx="290" cy="716" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
+<text x="290" y="721" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle">19</text>
+<circle cx="370" cy="716" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
+<text x="370" y="721" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle">20</text>
+<rect x="90" y="700" width="120" height="32" rx="16" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
+<text x="150.0" y="722" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle">GPIO10</text>
+<rect x="450" y="700" width="120" height="32" rx="16" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
+<text x="510.0" y="722" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle">GND</text>
+<circle cx="290" cy="762" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
+<text x="290" y="767" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle">21</text>
+<circle cx="370" cy="762" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
+<text x="370" y="767" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle">22</text>
+<rect x="90" y="746" width="120" height="32" rx="16" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
+<text x="150.0" y="768" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle">GPIO9</text>
+<rect x="450" y="746" width="120" height="32" rx="16" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
+<text x="510.0" y="768" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle">GPIO25</text>
+<circle cx="290" cy="808" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
+<text x="290" y="813" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle">23</text>
+<circle cx="370" cy="808" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
+<text x="370" y="813" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle">24</text>
+<rect x="90" y="792" width="120" height="32" rx="16" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
+<text x="150.0" y="814" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle">GPIO11</text>
+<rect x="450" y="792" width="120" height="32" rx="16" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
+<text x="510.0" y="814" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle">GPIO8</text>
+<circle cx="290" cy="854" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
+<text x="290" y="859" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle">25</text>
+<circle cx="370" cy="854" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
+<text x="370" y="859" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="12" fill="#3d2c05" font-weight="700" text-anchor="middle">26</text>
+<rect x="90" y="838" width="120" height="32" rx="16" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
+<text x="150.0" y="860" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle">GND</text>
+<rect x="450" y="838" width="120" height="32" rx="16" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
+<text x="510.0" y="860" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle">GPIO7</text>
+<text x="1160" y="182" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="24" fill="#333" font-weight="600" text-anchor="middle">ESP32-CAM (AI-Thinker)</text>
+<rect x="1040" y="198" width="240" height="590" rx="12" fill="#fdf3e1" stroke="#c8902e" stroke-width="2.5"/>
+<text x="1160" y="236" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="17" fill="#8a5a12" font-weight="600" text-anchor="middle">top view, camera up</text>
+<text x="1160" y="260" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="15" fill="#8a5a12" font-weight="normal" text-anchor="middle">OV2640 · Wi-Fi · 4 MB PSRAM</text>
+<rect x="1076" y="278" width="40" height="410" rx="6" fill="#2f2f2f" stroke="#2f2f2f" stroke-width="1"/>
+<rect x="1204" y="278" width="40" height="410" rx="6" fill="#2f2f2f" stroke="#2f2f2f" stroke-width="1"/>
+<rect x="1125" y="705" width="70" height="62" rx="8" fill="#2f2f2f" stroke="#2f2f2f" stroke-width="1"/>
+<circle cx="1160" cy="736" r="22" fill="#555" stroke="#999" stroke-width="3"/>
+<circle cx="1160" cy="736" r="10" fill="#1b2a4a" stroke="#1b2a4a" stroke-width="1"/>
+<circle cx="1096" cy="302" r="15" fill="#e9c46a" stroke="#d64545" stroke-width="3"/>
+<rect x="890" y="286" width="120" height="32" rx="16" fill="#d6454522" stroke="#d64545" stroke-width="2"/>
+<text x="950.0" y="308" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="15" fill="#1f1f1f" font-weight="600" text-anchor="middle">5V</text>
+<line x1="1010" y1="302" x2="1081" y2="302" stroke="#d64545" stroke-width="3"/>
+<circle cx="1096" cy="354" r="15" fill="#e9c46a" stroke="#2b2b2b" stroke-width="3"/>
+<rect x="890" y="338" width="120" height="32" rx="16" fill="#2b2b2b22" stroke="#2b2b2b" stroke-width="2"/>
+<text x="950.0" y="360" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="15" fill="#1f1f1f" font-weight="600" text-anchor="middle">GND</text>
+<line x1="1010" y1="354" x2="1081" y2="354" stroke="#2b2b2b" stroke-width="3"/>
+<circle cx="1096" cy="406" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
+<rect x="890" y="390" width="120" height="32" rx="16" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
+<text x="950.0" y="412" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle">IO12</text>
+<line x1="1010" y1="406" x2="1081" y2="406" stroke="#d9d6cf" stroke-width="1.2"/>
+<circle cx="1096" cy="458" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
+<rect x="890" y="442" width="120" height="32" rx="16" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
+<text x="950.0" y="464" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle">IO13</text>
+<line x1="1010" y1="458" x2="1081" y2="458" stroke="#d9d6cf" stroke-width="1.2"/>
+<circle cx="1096" cy="510" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
+<rect x="890" y="494" width="120" height="32" rx="16" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
+<text x="950.0" y="516" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle">IO15</text>
+<line x1="1010" y1="510" x2="1081" y2="510" stroke="#d9d6cf" stroke-width="1.2"/>
+<circle cx="1096" cy="562" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
+<rect x="890" y="546" width="120" height="32" rx="16" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
+<text x="950.0" y="568" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle">IO14</text>
+<line x1="1010" y1="562" x2="1081" y2="562" stroke="#d9d6cf" stroke-width="1.2"/>
+<circle cx="1096" cy="614" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
+<rect x="890" y="598" width="120" height="32" rx="16" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
+<text x="950.0" y="620" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle">IO2</text>
+<line x1="1010" y1="614" x2="1081" y2="614" stroke="#d9d6cf" stroke-width="1.2"/>
+<circle cx="1096" cy="666" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
+<rect x="890" y="650" width="120" height="32" rx="16" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
+<text x="950.0" y="672" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle">IO4</text>
+<line x1="1010" y1="666" x2="1081" y2="666" stroke="#d9d6cf" stroke-width="1.2"/>
+<circle cx="1224" cy="302" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
+<rect x="1310" y="286" width="120" height="32" rx="16" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
+<text x="1370.0" y="308" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle">3V3</text>
+<line x1="1239" y1="302" x2="1310" y2="302" stroke="#d9d6cf" stroke-width="1.2"/>
+<circle cx="1224" cy="354" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
+<rect x="1310" y="338" width="120" height="32" rx="16" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
+<text x="1370.0" y="360" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle">IO16</text>
+<line x1="1239" y1="354" x2="1310" y2="354" stroke="#d9d6cf" stroke-width="1.2"/>
+<circle cx="1224" cy="406" r="15" fill="#e9c46a" stroke="#e08a1e" stroke-width="3"/>
+<rect x="1310" y="390" width="120" height="32" rx="16" fill="#e08a1e22" stroke="#e08a1e" stroke-width="2"/>
+<text x="1370.0" y="412" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="15" fill="#1f1f1f" font-weight="600" text-anchor="middle">IO0</text>
+<line x1="1239" y1="406" x2="1310" y2="406" stroke="#e08a1e" stroke-width="3"/>
+<circle cx="1224" cy="458" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
+<rect x="1310" y="442" width="120" height="32" rx="16" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
+<text x="1370.0" y="464" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle">GND</text>
+<line x1="1239" y1="458" x2="1310" y2="458" stroke="#d9d6cf" stroke-width="1.2"/>
+<circle cx="1224" cy="510" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
+<rect x="1310" y="494" width="120" height="32" rx="16" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
+<text x="1370.0" y="516" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle">VCC</text>
+<line x1="1239" y1="510" x2="1310" y2="510" stroke="#d9d6cf" stroke-width="1.2"/>
+<circle cx="1224" cy="562" r="15" fill="#e9c46a" stroke="#2e9e5b" stroke-width="3"/>
+<rect x="1310" y="546" width="120" height="32" rx="16" fill="#2e9e5b22" stroke="#2e9e5b" stroke-width="2"/>
+<text x="1370.0" y="568" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="15" fill="#1f1f1f" font-weight="600" text-anchor="middle">U0R</text>
+<line x1="1239" y1="562" x2="1310" y2="562" stroke="#2e9e5b" stroke-width="3"/>
+<circle cx="1224" cy="614" r="15" fill="#e9c46a" stroke="#3b6fd4" stroke-width="3"/>
+<rect x="1310" y="598" width="120" height="32" rx="16" fill="#3b6fd422" stroke="#3b6fd4" stroke-width="2"/>
+<text x="1370.0" y="620" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="15" fill="#1f1f1f" font-weight="600" text-anchor="middle">U0T</text>
+<line x1="1239" y1="614" x2="1310" y2="614" stroke="#3b6fd4" stroke-width="3"/>
+<circle cx="1224" cy="666" r="15" fill="#e9c46a" stroke="#8a6a1a" stroke-width="1.5"/>
+<rect x="1310" y="650" width="120" height="32" rx="16" fill="#f5f4f0" stroke="#d9d6cf" stroke-width="1.2"/>
+<text x="1370.0" y="672" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="14" fill="#9a978f" font-weight="normal" text-anchor="middle">GND</text>
+<line x1="1239" y1="666" x2="1310" y2="666" stroke="#d9d6cf" stroke-width="1.2"/>
+<line x1="570" y1="302" x2="890" y2="302" stroke="#d64545" stroke-width="5"/>
+<text x="730" y="290" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="18" fill="#d64545" font-weight="700" text-anchor="middle">5 V</text>
+<path d="M570,394 H720 V354 H890" fill="none" stroke="#2b2b2b" stroke-width="5" stroke-linejoin="round"/>
+<text x="800" y="344" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="18" fill="#2b2b2b" font-weight="700" text-anchor="middle">GND</text>
+<rect x="1500" y="300" width="240" height="300" rx="14" fill="#f7f7fb" stroke="#8a8aa0" stroke-width="2.5" stroke-dasharray="10 6"/>
+<text x="1620" y="338" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="19" fill="#3a3a55" font-weight="600" text-anchor="middle">USB-serial adapter</text>
+<text x="1620" y="362" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="15" fill="#3a3a55" font-weight="normal" text-anchor="middle">only for flashing</text>
+<rect x="1560" y="390" width="120" height="32" rx="16" fill="#e08a1e22" stroke="#e08a1e" stroke-width="2"/>
+<text x="1620.0" y="412" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="15" fill="#1f1f1f" font-weight="600" text-anchor="middle">IO0 → GND</text>
+<rect x="1560" y="446" width="120" height="32" rx="16" fill="#2e9e5b22" stroke="#2e9e5b" stroke-width="2"/>
+<text x="1620.0" y="468" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="15" fill="#1f1f1f" font-weight="600" text-anchor="middle">TX</text>
+<rect x="1560" y="502" width="120" height="32" rx="16" fill="#3b6fd422" stroke="#3b6fd4" stroke-width="2"/>
+<text x="1620.0" y="524" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="15" fill="#1f1f1f" font-weight="600" text-anchor="middle">RX</text>
+<path d="M1430,406 H1560" fill="none" stroke="#e08a1e" stroke-width="4" stroke-linejoin="round"/>
+<path d="M1430,562 H1465 V462 H1560" fill="none" stroke="#2e9e5b" stroke-width="4" stroke-linejoin="round"/>
+<path d="M1430,614 H1485 V518 H1560" fill="none" stroke="#3b6fd4" stroke-width="4" stroke-linejoin="round"/>
+<rect x="50" y="930" width="1700" height="240" rx="14" fill="none" stroke="#2f6db5" stroke-width="2.5" stroke-dasharray="12 8"/>
+<text x="80" y="968" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="21" fill="#1d3f6e" font-weight="600" text-anchor="start">One Wi-Fi network (2.4 GHz). A router, or the Pi as its own hotspot.</text>
+<rect x="90" y="1000" width="400" height="130" rx="14" fill="#fdf3e1" stroke="#c8902e" stroke-width="2.5"/>
+<text x="290.0" y="1060.0" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="28" fill="#6b4a0e" font-weight="600" text-anchor="middle">ESP32-CAM</text>
+<text x="290.0" y="1098.0" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="21" fill="#c8902e" font-weight="normal" text-anchor="middle">camera, streams MJPEG</text>
+<rect x="700" y="1000" width="400" height="130" rx="14" fill="#fdf3e1" stroke="#c8902e" stroke-width="2.5"/>
+<text x="900.0" y="1060.0" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="28" fill="#6b4a0e" font-weight="600" text-anchor="middle">Raspberry Pi 5</text>
+<text x="900.0" y="1098.0" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="21" fill="#c8902e" font-weight="normal" text-anchor="middle">python -m server, all models</text>
+<rect x="1310" y="1000" width="400" height="130" rx="14" fill="#e3f4ea" stroke="#2e8b57" stroke-width="2.5"/>
+<text x="1510.0" y="1060.0" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="28" fill="#1b4d33" font-weight="600" text-anchor="middle">Browser</text>
+<text x="1510.0" y="1098.0" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="21" fill="#2e8b57" font-weight="normal" text-anchor="middle">phone, tablet or PC</text>
+<line x1="490" y1="1065" x2="690" y2="1065" stroke="#555" stroke-width="3" marker-end="url(#arrow)" stroke-dasharray="10 8"/>
+<text x="590" y="1045" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="19" fill="#333" font-weight="normal" text-anchor="middle">Wi-Fi MJPEG</text>
+<text x="590" y="1095" font-family="Consolas, monospace" font-size="16" fill="#666" font-weight="normal" text-anchor="middle">:81/stream</text>
+<line x1="1100" y1="1065" x2="1300" y2="1065" stroke="#555" stroke-width="3" marker-end="url(#arrow)" stroke-dasharray="10 8"/>
+<text x="1200" y="1045" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="19" fill="#333" font-weight="normal" text-anchor="middle">video + state</text>
+<text x="1200" y="1095" font-family="Consolas, monospace" font-size="16" fill="#666" font-weight="normal" text-anchor="middle">:8000/</text>
+<text x="70" y="1232" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="26" fill="#333" font-weight="600" text-anchor="start">Wiring table</text>
+<rect x="60" y="1248" width="1680" height="42" rx="6" fill="#f2f1ec" stroke="none" stroke-width="0"/>
+<text x="80" y="1276" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="19" fill="#333" font-weight="600" text-anchor="start">Wire</text>
+<text x="170" y="1276" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="19" fill="#333" font-weight="600" text-anchor="start">From</text>
+<text x="500" y="1276" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="19" fill="#333" font-weight="600" text-anchor="start">To</text>
+<text x="850" y="1276" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="19" fill="#333" font-weight="600" text-anchor="start">Purpose</text>
+<line x1="80" y1="1324" x2="130" y2="1324" stroke="#d64545" stroke-width="5"/>
+<text x="170" y="1330" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="19" fill="#222" font-weight="normal" text-anchor="start">ESP32-CAM 5V</text>
+<text x="500" y="1330" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="19" fill="#222" font-weight="normal" text-anchor="start">Pi pin 2 (5V), or its own 5 V supply</text>
+<text x="850" y="1330" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="19" fill="#555" font-weight="normal" text-anchor="start">Power. Use 5 V, not 3V3: Wi-Fi current peaks brown out the 3.3 V pin.</text>
+<line x1="80" y1="1368" x2="130" y2="1368" stroke="#2b2b2b" stroke-width="5"/>
+<text x="170" y="1374" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="19" fill="#222" font-weight="normal" text-anchor="start">ESP32-CAM GND</text>
+<text x="500" y="1374" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="19" fill="#222" font-weight="normal" text-anchor="start">Pi pin 6 (GND)</text>
+<text x="850" y="1374" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="19" fill="#555" font-weight="normal" text-anchor="start">Power return. Needed only when powering it from the Pi.</text>
+<line x1="80" y1="1412" x2="130" y2="1412" stroke="#2e9e5b" stroke-width="5"/>
+<text x="170" y="1418" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="19" fill="#222" font-weight="normal" text-anchor="start">Adapter TX</text>
+<text x="500" y="1418" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="19" fill="#222" font-weight="normal" text-anchor="start">ESP32-CAM U0R (GPIO3)</text>
+<text x="850" y="1418" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="19" fill="#555" font-weight="normal" text-anchor="start">Flashing only.</text>
+<line x1="80" y1="1456" x2="130" y2="1456" stroke="#3b6fd4" stroke-width="5"/>
+<text x="170" y="1462" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="19" fill="#222" font-weight="normal" text-anchor="start">Adapter RX</text>
+<text x="500" y="1462" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="19" fill="#222" font-weight="normal" text-anchor="start">ESP32-CAM U0T (GPIO1)</text>
+<text x="850" y="1462" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="19" fill="#555" font-weight="normal" text-anchor="start">Flashing and the serial log, which prints the IP address.</text>
+<line x1="80" y1="1500" x2="130" y2="1500" stroke="#e08a1e" stroke-width="5"/>
+<text x="170" y="1506" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="19" fill="#222" font-weight="normal" text-anchor="start">ESP32-CAM IO0</text>
+<text x="500" y="1506" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="19" fill="#222" font-weight="normal" text-anchor="start">GND</text>
+<text x="850" y="1506" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="19" fill="#555" font-weight="normal" text-anchor="start">Flashing only: hold low during reset, then remove for normal running.</text>
+<line x1="80" y1="1544" x2="130" y2="1544" stroke="#999" stroke-width="5"/>
+<text x="170" y="1550" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="19" fill="#222" font-weight="normal" text-anchor="start">Pi USB port</text>
+<text x="500" y="1550" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="19" fill="#222" font-weight="normal" text-anchor="start">USB speaker</text>
+<text x="850" y="1550" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="19" fill="#555" font-weight="normal" text-anchor="start">Spoken prompts with --speak. The Pi 5 has no audio jack.</text>
+<rect x="60" y="1612" width="1680" height="300" rx="12" fill="#f6f8fc" stroke="#c9d6ec" stroke-width="2"/>
+<text x="90" y="1652" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="23" fill="#1d3f6e" font-weight="600" text-anchor="start">Notes</text>
+<text x="90" y="1692" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="19" fill="#333" font-weight="normal" text-anchor="start">•  A stable 5 V supply matters most: at least 1 A, 2 A preferred. Brownouts are the main cause of dropouts.</text>
+<text x="90" y="1728" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="19" fill="#333" font-weight="normal" text-anchor="start">•  The Pi 5&#x27;s 5 V pin suits this with its 5 A power supply. A separate 5 V 2 A supply is the safer choice.</text>
+<text x="90" y="1764" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="19" fill="#333" font-weight="normal" text-anchor="start">•  Short, thick power wires: thin jumpers can drop enough voltage to reset the board.</text>
+<text x="90" y="1800" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="19" fill="#333" font-weight="normal" text-anchor="start">•  The ESP32 radio is 2.4 GHz only, so all devices must share a 2.4 GHz network or the Pi&#x27;s hotspot.</text>
+<text x="90" y="1836" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="19" fill="#333" font-weight="normal" text-anchor="start">•  The ESP32 stream serves one client: the Pi. Browsers watch the Pi&#x27;s /video, never the ESP32 directly.</text>
+<text x="90" y="1872" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="19" fill="#333" font-weight="normal" text-anchor="start">•  SerBot&#x27;s control link is not written yet: the robot is simulated (robot/simulated.py) until a BaseRobot driver exists.</text>
+<rect x="600" y="1948" width="26" height="26" rx="6" fill="#fdf3e1" stroke="#c8902e" stroke-width="2.5"/>
+<text x="638" y="1969" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="21" fill="#555" font-weight="normal" text-anchor="start">Pi-side device</text>
+<rect x="840" y="1948" width="26" height="26" rx="6" fill="#e3f4ea" stroke="#2e8b57" stroke-width="2.5"/>
+<text x="878" y="1969" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="21" fill="#555" font-weight="normal" text-anchor="start">Browser</text>
+<line x1="1060" y1="1961" x2="1120" y2="1961" stroke="#555" stroke-width="3" stroke-dasharray="10 8"/>
+<text x="1134" y="1969" font-family="'Segoe UI', Inter, Arial, sans-serif" font-size="21" fill="#555" font-weight="normal" text-anchor="start">wireless</text>
 </svg>
