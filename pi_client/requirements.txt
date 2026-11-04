@@ -1,7 +1,0 @@
-# Raspberry Pi side only. The model runs on the laptop, so no mediapipe/torch here.
-# From apt instead of pip:
-#   sudo apt install -y python3-picamera2   (Pi camera module)
-#   sudo apt install -y espeak-ng           (only for --speak)
-opencv-python-headless>=4.8
-numpy>=1.24
-websockets>=12.0

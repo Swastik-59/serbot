@@ -1,0 +1,29 @@
+# GPU PC: retraining and download_dataset.py only. The running system needs requirements-pi.txt on the Pi.
+#
+# Install the GPU build of PyTorch first, otherwise ultralytics pulls in the CPU-only build:
+#   pip install torch==2.14.0 torchvision==0.29.0 --index-url https://download.pytorch.org/whl/cu130
+#   pip install -r requirements-dev.txt
+
+mediapipe==0.10.14
+protobuf==4.25.9  # a newer one breaks MediaPipe at start-up
+ultralytics==8.4.164
+opencv-contrib-python==5.0.0.93
+opencv-python==5.0.0.93
+numpy==2.2.2
+scikit-learn==1.6.1
+joblib==1.4.2
+PyYAML==6.0.3
+
+# Training data
+pandas==3.0.5
+pyarrow==25.0.1
+remotezip==0.12.6
+requests==2.34.2
+tqdm==4.70.0
+
+# Server and tests, to try changes on the PC
+fastapi==0.140.13
+uvicorn[standard]==0.34.0
+websockets==16.1.1
+pytest==8.3.4
+httpx==0.28.1

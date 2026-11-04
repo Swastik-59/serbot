@@ -5,21 +5,30 @@ and make the fastest one the default.
 Run this on the Pi from the project root, once, while it has internet (it downloads yolo11n.pt and the
 exporters):
     python scripts/export_yolo_pi.py            # exports NCNN, then benchmarks PyTorch vs NCNN
-    python scripts/export_yolo_pi.py --onnx     # also exports and benchmarks ONNX
 
 The winner is written to yolo_best.txt, and the server loads what that file names. The ranking differs
 between machines, so run this on the Pi itself. Without the file the server uses yolo11n.pt.
+
+--onnx also exports and benchmarks ONNX, in a separate venv only: the onnx package needs protobuf 6.31 or
+newer and MediaPipe needs under 5, so the two cannot share the server's environment.
 """
 
 from __future__ import annotations
 
 import argparse
+import importlib.util
+import os
 import sys
 import time
 from pathlib import Path
 
 import numpy as np
-from ultralytics import YOLO
+
+# Ultralytics would otherwise pip-install exporters mid-run, which upgraded torch and protobuf and broke
+# MediaPipe and YOLO. Everything needed is pinned in requirements-pi.txt, so a gap is a clear error.
+os.environ["YOLO_AUTOINSTALL"] = "false"
+
+from ultralytics import YOLO  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -43,6 +52,11 @@ def main() -> None:
     parser.add_argument("--runs", type=int, default=30)
     parser.add_argument("--onnx", action="store_true", help="Also export and time ONNX")
     args = parser.parse_args()
+    needed = ["ncnn", "pnnx"] + (["onnx", "onnxruntime"] if args.onnx else [])
+    missing = [name for name in needed if importlib.util.find_spec(name) is None]
+    if missing:
+        raise SystemExit(f"Missing {', '.join(missing)}. NCNN comes with requirements-pi.txt; for ONNX "
+                         "use a separate venv (see the top of this script).")
 
     candidates = {"pytorch": args.weights,
                   "ncnn": YOLO(args.weights).export(format="ncnn", imgsz=args.imgsz)}
