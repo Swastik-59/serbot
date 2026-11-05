@@ -343,6 +343,7 @@ def create_app(pipeline: Optional[GesturePipeline] = None, camera: Optional[Came
             "gestures": {g: {k: m.get(k) for k in ("intent", "actionable", "hold_time", "min_conf", "description")}
                          for g, m in cfg["gestures"].items()},
             "states": cfg["state_machine"]["states"],
+            "transitions": cfg["state_machine"]["transitions"],
             "margin_threshold": cfg["intent_engine"]["margin_threshold"],
             "allowed_objects": cfg["pointing"]["allowed_classes"],
             "model": {
