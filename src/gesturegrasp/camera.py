@@ -202,6 +202,12 @@ class CameraSource:
                 self._decoded = decoded
         return decoded
 
+    def jpeg_of(self, frame_id: int) -> Optional[bytes]:
+        """The camera's original JPEG for this frame, if it is still the newest one."""
+        with self._cond:
+            payload = self._payload
+            return payload if frame_id == self._frame_id and isinstance(payload, bytes) else None
+
     def wait_for_frame(self, after_id: int, timeout: float = 0.5) -> Optional[Frame]:
         """Block until a frame newer than after_id exists, then return the newest. None on timeout."""
         with self._cond:
@@ -282,6 +288,7 @@ class Esp32CamSource(CameraSource):
         if self._status_thread is not None:
             self._status_thread.join(timeout)
             self._status_thread = None
+        self._session.close()
 
     def status(self) -> dict[str, Any]:
         return {**super().status(), "url": _strip_credentials(self.stream_url), "mode": self.mode,

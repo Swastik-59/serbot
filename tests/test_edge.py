@@ -12,7 +12,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from fake_esp32 import FakeEsp32Cam, jpeg_bytes
-from server.__main__ import RedactToken, build_parser
+from server.__main__ import (RedactToken, build_parser, camera_for_mode, ensure_compatible_python,
+                             resolve_mode, venv_python)
 from server.app import InferenceService, create_app
 from server.loop import CameraLoop
 from server.speech import Speaker
@@ -409,6 +410,81 @@ def test_flags_have_environment_defaults(monkeypatch):
 
 def test_source_is_another_name_for_camera_url():
     assert build_parser().parse_args(["--source", "clip.mp4"]).camera_url == "clip.mp4"
+
+
+@pytest.mark.parametrize("machine, mode", [("aarch64", "pi"), ("AMD64", "laptop"), ("x86_64", "laptop")])
+def test_auto_mode_picks_the_version_for_this_machine(monkeypatch, machine, mode):
+    monkeypatch.setattr("server.__main__.platform.machine", lambda: machine)
+    assert resolve_mode("auto") == mode
+
+
+def test_an_explicit_mode_wins(monkeypatch):
+    monkeypatch.setattr("server.__main__.platform.machine", lambda: "aarch64")
+    assert resolve_mode("laptop") == "laptop"
+
+
+def test_each_version_has_its_own_default_camera():
+    assert camera_for_mode("laptop", None) == "none"
+    assert camera_for_mode("pi", None) == "http://esp32cam.local:81/stream"
+    assert camera_for_mode("laptop", "http://10.0.0.9:81/stream") == "http://10.0.0.9:81/stream"
+
+
+def test_gpu_settings_stay_off_without_a_gpu(monkeypatch):
+    torch = pytest.importorskip("torch")
+    monkeypatch.setattr(torch.cuda, "is_available", lambda: False)
+    monkeypatch.setattr("ultralytics.YOLO", lambda *args, **kwargs: SlowModel())
+    det = ObjectDetector(model_name="yolo11n.pt")
+    assert (det.device, det.imgsz, det.rate_hz) == ("cpu", 320, 3.0)
+
+
+def test_a_laptop_gpu_uses_full_size_yolo(monkeypatch):
+    torch = pytest.importorskip("torch")
+    monkeypatch.setattr(torch.cuda, "is_available", lambda: True)
+    monkeypatch.setattr("ultralytics.YOLO", lambda *args, **kwargs: SlowModel())
+    det = ObjectDetector(model_name="yolo11n.pt")
+    assert (det.device, det.imgsz, det.rate_hz) == ("cuda:0", 640, 15.0)
+
+
+def test_an_export_stays_on_the_cpu_even_with_a_gpu(monkeypatch):
+    torch = pytest.importorskip("torch")
+    monkeypatch.setattr(torch.cuda, "is_available", lambda: True)
+    monkeypatch.setattr("ultralytics.YOLO", lambda *args, **kwargs: SlowModel())
+    assert ObjectDetector(model_name="yolo11n_ncnn_model").device == "cpu"
+
+
+def test_a_compatible_protobuf_starts_normally(monkeypatch, tmp_path):
+    monkeypatch.setattr("server.__main__.importlib.metadata.version", lambda name: "4.25.9")
+    ensure_compatible_python(tmp_path)  # returns, so the server starts in this process
+
+
+def test_a_new_protobuf_hands_over_to_the_project_venv(monkeypatch, tmp_path):
+    monkeypatch.setattr("server.__main__.importlib.metadata.version", lambda name: "7.36.2")
+    monkeypatch.setattr("sys.argv", ["server", "--port", "9000"])
+    python = venv_python(tmp_path)
+    python.parent.mkdir()
+    python.write_text("")
+    calls = []
+    monkeypatch.setattr("server.__main__.subprocess.call", lambda args: calls.append(args) or 3)
+    with pytest.raises(SystemExit) as stopped:
+        ensure_compatible_python(tmp_path)
+    assert stopped.value.code == 3
+    assert calls == [[str(python), "-m", "server", "--port", "9000"]]
+
+
+def test_a_new_protobuf_without_a_venv_explains_the_fix(monkeypatch, tmp_path):
+    monkeypatch.setattr("server.__main__.importlib.metadata.version", lambda name: "7.36.2")
+    with pytest.raises(SystemExit, match="protobuf==4.25.9"):
+        ensure_compatible_python(tmp_path)
+
+
+def test_a_broken_venv_does_not_hand_over_to_itself(monkeypatch, tmp_path):
+    monkeypatch.setattr("server.__main__.importlib.metadata.version", lambda name: "7.36.2")
+    monkeypatch.setattr("sys.prefix", str(tmp_path))
+    python = venv_python(tmp_path)
+    python.parent.mkdir()
+    python.write_text("")
+    with pytest.raises(SystemExit, match="breaks MediaPipe"):
+        ensure_compatible_python(tmp_path)
 
 
 def test_token_is_redacted_from_logs():

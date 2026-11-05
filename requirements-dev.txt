@@ -1,4 +1,4 @@
-# GPU PC: retraining and download_dataset.py only. The running system needs requirements-pi.txt on the Pi.
+# Laptop version of the demo, plus retraining and download_dataset.py on a GPU PC. The Pi uses requirements-pi.txt.
 #
 # Install the GPU build of PyTorch first, otherwise ultralytics pulls in the CPU-only build:
 #   pip install torch==2.14.0 torchvision==0.29.0 --index-url https://download.pytorch.org/whl/cu130
