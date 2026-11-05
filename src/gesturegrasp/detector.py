@@ -1,7 +1,8 @@
 """
 Lightweight YOLO Object Detection for GestureGrasp.
-Wraps Ultralytics nano models, on the CPU: the system runs on a Raspberry Pi 5, which has no GPU.
-Uses whichever export of yolo11n scripts/export_yolo_pi.py measured as fastest, otherwise yolo11n.pt.
+Wraps Ultralytics nano models. On the Raspberry Pi 5 that means the CPU, using whichever export of yolo11n
+scripts/export_yolo_pi.py measured as fastest, otherwise yolo11n.pt. A laptop with an NVIDIA GPU uses it,
+at full size and a higher rate.
 
 detect() is synchronous. detect_latest() is for the live loop: YOLO runs on its own thread at a few Hz
 and the loop reuses its last answer, because STOP has a 0.25 s hold and must not wait for object boxes.
@@ -28,6 +29,8 @@ DEFAULT_MODEL = "yolo11n.pt"
 BEST_MODEL_FILE = "yolo_best.txt"  # written by scripts/export_yolo_pi.py on the machine that will run it
 DEFAULT_IMGSZ = 320
 DEFAULT_RATE_HZ = 3.0
+GPU_IMGSZ = 640
+GPU_RATE_HZ = 15.0
 
 
 def default_model() -> str:
@@ -82,11 +85,15 @@ class ObjectDetector:
             self.active_model_name = self.model_name
             try:
                 import torch
-                # Leave cores free for hand tracking: it is what makes STOP fast.
-                torch.set_num_threads(max(1, (os.cpu_count() or 2) // 2))
+                if torch.cuda.is_available() and self.model_name.endswith(".pt"):
+                    self.device, self.imgsz, self.rate_hz = "cuda:0", GPU_IMGSZ, GPU_RATE_HZ
+                else:
+                    # Leave cores free for hand tracking: it is what makes STOP fast.
+                    torch.set_num_threads(max(1, (os.cpu_count() or 2) // 2))
             except ImportError:
                 pass
-            logger.info(f"YOLO detector '{self.model_name}' loaded, imgsz={self.imgsz}, {self.rate_hz:g} Hz.")
+            logger.info(f"YOLO detector '{self.model_name}' loaded on {self.device}, "
+                        f"imgsz={self.imgsz}, {self.rate_hz:g} Hz.")
         except Exception as e:
             logger.warning(
                 f"Failed to load YOLO model '{self.model_name}': {e}. "
