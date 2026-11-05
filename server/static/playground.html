@@ -3,175 +3,228 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>GestureGrasp Playground</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👉</text></svg>">
+<title>GestureGrasp</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='%23ffd100'/><circle cx='50' cy='50' r='32' fill='%23c8101e'/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
+  /* Colour zones, as on hospital signs: each robot state owns one colour, and its name is always written too. */
   :root {
-    --fog: #e9eef2;        /* page */
-    --paper: #ffffff;      /* cards */
-    --ink: #14213d;        /* primary text */
-    --ink-2: #4a5672;      /* secondary text */
-    --ink-3: #7b869c;      /* muted text */
-    --line: #d3dce4;       /* hairlines */
-    --teal: #0f7173;       /* what the model sees */
-    --teal-soft: #d5ecec;
-    --amber: #e8a33d;      /* holding a gesture */
-    --amber-soft: #fbecd2;
-    --coral: #d9483b;      /* stop, reserved */
-    --coral-soft: #f8dcd8;
-    --stage: #0e1726;      /* camera frame */
-    --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
-    --body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
-    --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
-    --radius: 14px;
+    --ground: #e7eeea;
+    --surface: #ffffff;
+    --ink: #13294b;
+    --ink-soft: #3d4f68;
+    --ink-quiet: #566579;
+    --rule: #c6d2cc;
+    --stage: #101c2e;
+    --amber: #f5b700;
+    --stop: #c8101e;
+    --ring: #ffd100;
+    --zone: #3f4f66;
+    --on-zone: #ffffff;
+    --font: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
   }
+  :root[data-state="LISTENING"]       { --zone: #0b5cad; }
+  :root[data-state="TARGET_PROPOSED"] { --zone: #f5b700; --on-zone: #13294b; }
+  :root[data-state="EXECUTING"]       { --zone: #0a6e4f; }
+  :root[data-state="AWAIT_FEEDBACK"]  { --zone: #5b2a86; }
+  :root[data-state="RETURNING"]       { --zone: #a8430e; }
+  :root[data-state="STOPPED"]         { --zone: #b3121d; }
+
   * { box-sizing: border-box; }
-  html { color-scheme: light; }
+  html { color-scheme: light; -webkit-text-size-adjust: 100%; }
   body {
-    margin: 0; background: var(--fog); color: var(--ink);
-    font: 16px/1.5 var(--body); -webkit-font-smoothing: antialiased;
+    margin: 0; background: var(--ground); color: var(--ink);
+    font: 400 1.0625rem/1.5 var(--font); font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
   }
-  button, input { font: inherit; }
-  :focus-visible { outline: 3px solid var(--teal); outline-offset: 2px; border-radius: 6px; }
-  .wrap { max-width: 1320px; margin: 0 auto; padding: 20px clamp(16px, 3vw, 32px) 40px; }
+  h1, h2, h3, p, ol, ul, dl, dd { margin: 0; padding: 0; }
+  ol, ul { list-style: none; }
+  button, input { font: inherit; color: inherit; }
+  button { cursor: pointer; touch-action: manipulation; }
+  :focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+  .hidden { display: none !important; }
+  .skip { position: absolute; left: -999px; }
+  .skip:focus { left: 16px; top: 12px; z-index: 30; background: var(--surface); padding: 10px 14px; border-radius: 6px; }
 
-  /* header */
-  header { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
-  .brand { display: flex; align-items: baseline; gap: 10px; margin-right: auto; }
-  .brand b { font: 700 1.55rem/1 var(--display); letter-spacing: -0.02em; }
-  .brand span { font-size: .95rem; color: var(--ink-2); }
-  .chip {
-    display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px;
-    background: var(--paper); border: 1px solid var(--line); font-size: .85rem; color: var(--ink-2);
-  }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-3); }
-  .dot.ok { background: var(--teal); }
-  .dot.bad { background: var(--coral); }
+  /* The first screen: everything on the left is looking, the colour panel on the right is knowing. */
+  .desk { display: grid; grid-template-columns: minmax(0, 1fr) clamp(360px, 33vw, 500px); min-height: 100dvh; }
+  .look { display: flex; flex-direction: column; min-width: 0; padding: 14px clamp(16px, 2.2vw, 28px) 18px; gap: 12px; }
 
-  /* toolbar */
-  .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
-  .tabs { display: inline-flex; background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 4px; }
+  .top { display: flex; align-items: center; gap: 12px 22px; flex-wrap: wrap; }
+  .brand { font-weight: 800; font-size: 1.4rem; letter-spacing: -0.01em; }
+  .cam-line { display: flex; align-items: center; gap: 9px; color: var(--ink-soft); min-width: 0; margin-right: auto; }
+  .lamp { flex: none; width: 13px; height: 13px; border-radius: 50%; background: var(--ink-quiet); }
+  .lamp.good { background: #0a7d59; }
+  .lamp.bad { background: var(--stop); border-radius: 2px; transform: rotate(45deg); }
+
+  .source { display: flex; gap: 2px; }
   .tab {
-    border: 0; background: transparent; color: var(--ink-2); padding: 8px 14px; border-radius: 9px; cursor: pointer;
+    border: 0; background: none; min-height: 44px; padding: 6px 13px; color: var(--ink-soft);
+    border-bottom: 3px solid transparent;
   }
-  .tab[aria-selected="true"] { background: var(--ink); color: #fff; }
-  .spacer { margin-left: auto; }
-  .toggle { display: inline-flex; align-items: center; gap: 8px; color: var(--ink-2); font-size: .9rem; cursor: pointer; }
-  .btn {
-    border: 1px solid var(--line); background: var(--paper); color: var(--ink); padding: 8px 14px;
-    border-radius: 10px; cursor: pointer;
-  }
-  .btn:hover { border-color: var(--ink-3); }
-  .btn.stop { background: var(--coral); border-color: var(--coral); color: #fff; font-weight: 700; }
-  .btn.stop:hover { filter: brightness(.95); }
+  .tab:hover { color: var(--ink); }
+  .tab[aria-selected="true"] { color: var(--ink); font-weight: 600; border-bottom-color: var(--ink); }
 
-  /* main grid */
-  .main { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(300px, 1fr); gap: 18px; align-items: start; }
-  .card { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; }
-  .label {
-    font: 500 .72rem/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3);
-    margin: 0 0 12px;
-  }
-
-  /* stage */
-  .stage-card { padding: 0; overflow: hidden; }
+  /* Camera */
   .stage {
-    position: relative; background: var(--stage); aspect-ratio: 4 / 3; display: grid; place-items: center;
+    position: relative; flex: 1 1 auto; min-height: 280px; background: var(--stage); border-radius: 4px;
+    display: grid; place-items: center; overflow: hidden;
   }
   .stage video, .stage img.view, .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
   .stage video.mirror { transform: scaleX(-1); }
-  .empty { position: relative; text-align: center; color: #c9d3e0; max-width: 340px; padding: 20px; }
-  .empty h2 { font: 700 1.4rem/1.2 var(--display); color: #fff; margin: 0 0 8px; }
-  .empty p { margin: 0 0 16px; }
-  .empty .btn { background: #fff; }
+  .empty { position: relative; color: #d8e0ea; max-width: 30rem; padding: 24px; text-align: center; }
+  .empty h2 { font-size: 1.6rem; font-weight: 800; color: #fff; line-height: 1.2; margin-bottom: 8px; }
+  .empty code { font: inherit; color: #fff; background: #24344c; padding: 2px 6px; border-radius: 3px; overflow-wrap: anywhere; }
+  .empty .plain { margin-top: 16px; background: #fff; color: var(--ink); border: 0; border-radius: 6px; min-height: 48px; padding: 8px 20px; font-weight: 600; }
+  .hold { position: absolute; left: 0; right: 0; bottom: 0; height: 8px; background: transparent; }
+  .hold i { display: block; height: 100%; width: 0; background: var(--amber); transition: width .12s linear; }
+  .hold.fired i { background: #3ddc97; }
 
-  /* the interpreter caption: the signature */
-  .caption { padding: 20px 24px 22px; border-top: 1px solid var(--line); }
-  .says { font: 700 clamp(1.6rem, 3.1vw, 2.6rem)/1.15 var(--display); letter-spacing: -0.02em; margin: 0; min-height: 1.2em; }
-  .says em { font-style: normal; color: var(--teal); box-shadow: inset 0 -0.18em 0 var(--teal-soft); }
-  .says.unsure { color: var(--ink-3); }
-  .says.stop { color: var(--coral); }
-  .hold { height: 6px; background: var(--fog); border-radius: 3px; margin: 14px 0 12px; overflow: hidden; }
-  .hold i { display: block; height: 100%; width: 0; background: var(--amber); border-radius: 3px; transition: width .12s linear; }
-  .hold.fired i { background: var(--teal); }
-  .caption-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-  .next { color: var(--ink-2); margin: 0; }
-  .next b { color: var(--ink); }
-  .sent {
-    margin-left: auto; font: 500 .85rem/1 var(--mono); padding: 7px 11px; border-radius: 8px;
-    background: var(--teal-soft); color: var(--teal); opacity: 0; transform: translateY(4px);
-    transition: opacity .2s, transform .2s;
+  .reading { display: flex; align-items: baseline; gap: 8px 20px; flex-wrap: wrap; min-height: 2.6rem; }
+  .says { font-weight: 800; font-size: clamp(1.45rem, 2.4vw, 2rem); line-height: 1.2; letter-spacing: -0.01em; }
+  .says em { font-style: normal; text-decoration: underline; text-decoration-thickness: .1em; text-underline-offset: .12em; }
+  .says.unsure { color: var(--ink-soft); font-weight: 600; }
+  .says.stop { color: var(--stop); }
+  .sent { margin-left: auto; font-weight: 600; color: #0a6e4f; opacity: 0; transition: opacity .2s; }
+  .sent.show { opacity: 1; }
+  .switches { display: flex; gap: 8px 20px; flex-wrap: wrap; }
+  .switch { display: inline-flex; align-items: center; gap: 9px; min-height: 44px; color: var(--ink-soft); cursor: pointer; }
+  .switch input { width: 20px; height: 20px; accent-color: var(--ink); }
+
+  /* Which signs work right now */
+  .signs { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+  .g {
+    position: relative; display: grid; justify-items: center; align-content: start; text-align: center;
+    padding: 8px 3px 9px; border-radius: 4px; color: var(--ink-quiet); transition: background .2s, color .2s;
   }
-  .sent.show { opacity: 1; transform: none; }
+  .g svg { width: clamp(44px, 4.8vw, 62px); height: clamp(44px, 4.8vw, 62px); opacity: .42; }
+  .g b { font-size: 1rem; font-weight: 600; line-height: 1.2; margin-top: 3px; }
+  .g small { font-size: .9rem; line-height: 1.25; }
+  .g.can { background: var(--surface); color: var(--ink); }
+  .g.can svg { opacity: 1; }
+  .g.now { background: var(--zone); color: var(--on-zone); }
+  .g.now svg { opacity: 1; }
 
-  /* side panel */
-  .side { display: grid; gap: 18px; }
-  .bars { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; }
-  .bar { display: grid; grid-template-columns: 112px 1fr 46px; align-items: center; gap: 10px; font-size: .9rem; }
-  .bar .name { color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .bar.top .name { color: var(--ink); font-weight: 700; }
-  .track { position: relative; height: 10px; background: var(--fog); border-radius: 5px; }
-  .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; background: var(--teal); border-radius: 5px; opacity: .45; transition: width .15s ease-out; }
-  .bar.top .fill { opacity: 1; }
-  .tick { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink); opacity: .55; border-radius: 1px; }
-  .pct { font: 400 .82rem/1 var(--mono); color: var(--ink-2); text-align: right; }
-  .legend-note { font-size: .8rem; color: var(--ink-3); margin: 10px 0 0; display: flex; gap: 6px; align-items: center; }
-  .legend-note .tick-key { width: 2px; height: 12px; background: var(--ink); opacity: .55; display: inline-block; }
+  /* The colour panel */
+  .plate {
+    position: sticky; top: 0; height: 100dvh; min-height: 560px; display: flex; flex-direction: column;
+    gap: clamp(12px, 2.4vh, 22px); padding: clamp(18px, 3vh, 30px) clamp(20px, 2.4vw, 34px);
+    background: var(--zone); color: var(--on-zone); transition: background-color .3s ease-out, color .3s ease-out;
+  }
+  .plate :focus-visible { outline-color: var(--on-zone); }
+  .steps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+  .step { height: 7px; border-radius: 2px; background: currentColor; opacity: .28; }
+  .step.done { opacity: .62; }
+  .step.on { opacity: 1; }
+  .state-name { font-weight: 600; font-size: 1.25rem; }
+  .keep { white-space: nowrap; }
+  .prompt { font-weight: 800; font-size: clamp(1.9rem, 2.9vw, 2.7rem); line-height: 1.12; letter-spacing: -0.015em; text-wrap: balance; }
+  .sign-now { flex: 1 1 auto; min-height: 0; display: flex; align-items: center; gap: 18px; }
+  .ring { position: relative; flex: none; width: clamp(128px, 23vh, 190px); aspect-ratio: 1; }
+  .ring svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .ring .arc { fill: none; stroke: currentColor; stroke-width: 5; transform: rotate(-90deg); transform-origin: center; }
+  .ring .track { opacity: .25; }
+  .ring .fill { stroke-dasharray: 100; stroke-dashoffset: 100; transition: stroke-dashoffset .12s linear; }
+  .ring-note { font-size: 1.1rem; line-height: 1.3; }
+  .ring-note b { display: block; font-weight: 800; font-size: 1.3rem; }
 
-  .facts { display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; margin: 0; font-size: .92rem; }
-  .facts dt { color: var(--ink-2); }
-  .facts dd { margin: 0; font: 500 .9rem/1.5 var(--mono); text-align: right; }
-  .pass { color: var(--teal); }
-  .fail { color: var(--coral); }
-  .reason { margin: 12px 0 0; font-size: .85rem; color: var(--ink-3); }
+  .safety { display: grid; grid-template-columns: auto 1fr; gap: 10px 18px; align-items: center; }
+  .estop {
+    flex: none; width: clamp(112px, 19vh, 150px); aspect-ratio: 1; border-radius: 50%; padding: 0; color: #fff;
+    border: clamp(10px, 1.6vh, 14px) solid var(--ring); outline: 3px solid #13294b; outline-offset: 0;
+    background: radial-gradient(circle at 42% 34%, #ee3440 0, var(--stop) 58%, #97000f 100%);
+    font-weight: 800; font-size: 1.55rem; letter-spacing: .02em;
+    box-shadow: 0 5px 0 #6d0810; transition: transform .08s, box-shadow .08s;
+  }
+  .estop:hover { filter: brightness(1.06); }
+  .estop:active { transform: translateY(4px); box-shadow: 0 1px 0 #6d0810; }
+  .estop:focus-visible { outline: 4px solid #fff; outline-offset: 3px; }
+  .safety-note { font-size: 1.02rem; line-height: 1.35; }
+  .safety-note kbd { font: inherit; font-weight: 600; border: 1.5px solid currentColor; border-radius: 3px; padding: 0 5px; }
+  .plain-btn {
+    margin-top: 8px; min-height: 44px; padding: 6px 14px; background: none; border: 2px solid currentColor;
+    border-radius: 6px; font-weight: 600;
+  }
+  .plain-btn:hover { background: color-mix(in srgb, currentColor 14%, transparent); }
+  .stop-error { grid-column: 1 / -1; font-weight: 600; }
+  .stop-bar { display: none; }
+
+  /* The workings, for carers and for anyone curious */
+  .workings { background: var(--surface); padding: clamp(28px, 4vw, 48px) clamp(16px, 3vw, 44px) 40px; }
+  .workings > h2 { font-size: clamp(1.6rem, 2.6vw, 2.2rem); font-weight: 800; letter-spacing: -0.01em; }
+  .workings > p { color: var(--ink-soft); max-width: 60ch; margin-top: 4px; }
+  .panels { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 34px clamp(24px, 3.4vw, 52px); margin-top: 28px; }
+  .panel h3 { font-size: 1.2rem; font-weight: 800; margin-bottom: 12px; }
+  .p-bars { grid-column: span 5; }
+  .p-decision { grid-column: span 4; }
+  .p-speed { grid-column: span 3; }
+  .p-map { grid-column: span 5; }
+  .p-log { grid-column: span 4; }
+  .p-about { grid-column: span 3; }
+
+  .bars { display: grid; gap: 4px; }
+  .bar { display: grid; grid-template-columns: 26px 7.4rem 1fr 3rem; align-items: center; gap: 9px; min-height: 30px; color: var(--ink-soft); }
+  .bar svg { width: 26px; height: 26px; opacity: .6; }
+  .bar.top { color: var(--ink); font-weight: 600; }
+  .bar.top svg { opacity: 1; }
+  .track { position: relative; height: 12px; background: var(--ground); border-radius: 2px; }
+  .fill { position: absolute; inset: 0 auto 0 0; width: 0; background: #8fa3b5; border-radius: 2px; transition: width .15s ease-out; }
+  .bar.top .fill { background: var(--ink); }
+  .tick { position: absolute; top: -4px; bottom: -4px; width: 3px; background: var(--stop); }
+  .pct { text-align: right; }
+  .note { color: var(--ink-soft); margin-top: 10px; font-size: 1rem; }
+  .tick-key { display: inline-block; width: 3px; height: 14px; background: var(--stop); margin-right: 7px; vertical-align: -2px; }
+
+  .facts { display: grid; grid-template-columns: 1fr auto; gap: 7px 16px; }
+  .facts dt { color: var(--ink-soft); }
+  .facts dd { text-align: right; font-weight: 600; }
+  .pass { color: #0a6e4f; }
+  .fail { color: var(--stop); }
+  .facts + .panel-sub { margin-top: 26px; }
   .objects { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
-  .obj { font-size: .82rem; padding: 4px 9px; border-radius: 999px; background: var(--fog); color: var(--ink-2); }
-  .obj.hit { background: var(--teal); color: #fff; }
+  .obj { padding: 3px 10px; border-radius: 3px; background: var(--ground); color: var(--ink-soft); font-size: 1rem; }
+  .obj.hit { background: var(--ink); color: #fff; }
 
-  /* conversation track: the real order of the robot's steps */
-  .left { display: grid; gap: 18px; }
-  .steps { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0; padding: 0; list-style: none; }
-  .step {
-    padding: 9px 14px; border-radius: 10px; border: 1px solid var(--line); color: var(--ink-3); background: var(--paper);
-    font-size: .92rem; transition: background .2s, color .2s;
+  svg.map { display: block; width: 100%; height: auto; background: var(--ground); border-radius: 4px; }
+  .map text { font: 600 25px var(--font); fill: var(--ink); }
+  .log { display: grid; gap: 10px; max-height: 360px; overflow: auto; }
+  .log li { display: grid; grid-template-columns: 30px 1fr auto; gap: 10px; align-items: center; }
+  .log svg { width: 30px; height: 30px; }
+  .log b { font-weight: 600; display: block; line-height: 1.25; }
+  .log span { color: var(--ink-soft); font-size: 1rem; }
+  .log time { color: var(--ink-quiet); font-size: 1rem; }
+  .log .none { display: block; color: var(--ink-soft); }
+  .about { color: var(--ink-soft); }
+  .about p + p { margin-top: 10px; }
+  .about b { color: var(--ink); font-weight: 600; }
+
+  @media (max-width: 1040px) {
+    .p-bars, .p-decision, .p-map, .p-log { grid-column: span 6; }
+    .p-speed, .p-about { grid-column: span 6; }
   }
-  .step.on { background: var(--ink); color: #fff; border-color: var(--ink); }
-  .step.on.stopped { background: var(--coral); border-color: var(--coral); }
-  .arrow { color: var(--ink-3); }
-  .branch { margin-left: auto; display: flex; gap: 8px; align-items: center; }
-  .branch small { color: var(--ink-3); }
-
-  .lower { display: grid; grid-template-columns: 1fr 1fr 1.25fr; gap: 18px; margin-top: 18px; }
-  svg.map { width: 100%; height: auto; display: block; background: var(--fog); border-radius: 10px; }
-  .map text { font: 700 22px var(--body); fill: var(--ink-2); }
-  .robot-line { margin: 10px 0 0; font-size: .9rem; color: var(--ink-2); }
-  .log { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; max-height: 260px; overflow: auto; }
-  .log li { display: grid; grid-template-columns: 64px 1fr; gap: 10px; font-size: .9rem; }
-  .log time { font: 400 .8rem/1.6 var(--mono); color: var(--ink-3); }
-  .log li.none { display: block; color: var(--ink-3); }
-  .gestures { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
-  .g { border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px; transition: border-color .2s, background .2s; }
-  .g .e { font-size: 1.35rem; line-height: 1; }
-  .g b { display: block; font-size: .92rem; margin-top: 4px; }
-  .g small { color: var(--ink-3); font-size: .8rem; }
-  .g.now { border-color: var(--teal); background: var(--teal-soft); }
-
-  footer { margin-top: 22px; color: var(--ink-2); font-size: .88rem; display: flex; flex-wrap: wrap; gap: 6px 22px; }
-  footer b { font-family: var(--mono); font-weight: 500; color: var(--ink); }
-
-  .hidden { display: none !important; }
-  @media (max-width: 560px) {
-    .tabs { display: flex; width: 100%; }
-    .tab { flex: 1; padding: 8px 6px; font-size: .9rem; }
-    .brand span { display: none; }
+  @media (max-width: 860px) {
+    .desk { grid-template-columns: minmax(0, 1fr); }
+    .plate { order: -1; position: static; height: auto; min-height: 0; padding: 16px; }
+    .sign-now { gap: 14px; }
+    .ring { width: 104px; }
+    .safety .estop, .wide-only { display: none; }
+    .safety { grid-template-columns: 1fr; }
+    .stage { aspect-ratio: 4 / 3; flex: none; min-height: 0; }
+    .signs { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .g svg { width: 52px; height: 52px; }
+    .panels { display: flex; flex-direction: column; }
+    .stop-bar {
+      display: block; position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+      background: var(--ring);
+    }
+    .stop-bar button { width: 100%; min-height: 58px; border: 0; border-radius: 6px; background: var(--stop); color: #fff; font-weight: 800; font-size: 1.3rem; }
+    body { padding-bottom: 80px; }
   }
-  @media (max-width: 1000px) {
-    .main { grid-template-columns: 1fr; }
-    .lower { grid-template-columns: 1fr; }
-    .branch { margin-left: 0; }
+  @media (max-width: 460px) {
+    .tab { padding: 6px 9px; }
+    .bar { grid-template-columns: 26px 6.6rem 1fr 2.8rem; }
   }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { transition: none !important; }
@@ -179,132 +232,173 @@
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div class="brand"><b>GestureGrasp</b><span>Playground: see what the model reads from your hand</span></div>
-    <span class="chip" id="modelChip"><span class="dot"></span><span>Loading model…</span></span>
-    <span class="chip" id="camChip"><span class="dot"></span><span>Camera: checking…</span></span>
-    <span class="chip" id="connChip"><span class="dot"></span><span>Not streaming</span></span>
-  </header>
-
-  <div class="toolbar">
-    <div class="tabs" role="tablist" aria-label="Camera source">
-      <button class="tab" role="tab" aria-selected="true" data-src="esp32">ESP32-CAM (via Pi)</button>
-      <button class="tab" role="tab" aria-selected="false" data-src="webcam">Your webcam</button>
-      <button class="tab" role="tab" aria-selected="false" data-src="photo">A photo</button>
-    </div>
-    <label class="toggle hidden" id="mirrorWrap"><input type="checkbox" id="mirror" checked> Mirror my view</label>
-    <label class="toggle" id="speakWrap"><input type="checkbox" id="speak"> Speak prompts here</label>
-    <span class="spacer"></span>
-    <button class="btn" id="resetBtn">Start over</button>
-    <button class="btn stop" id="stopBtn">Stop robot</button>
-  </div>
-
-  <div class="main">
-    <div class="left">
-    <section class="card stage-card" aria-label="Camera">
-      <div class="stage" id="stage">
-        <video id="video" class="mirror hidden" autoplay playsinline muted></video>
-        <img id="view" class="view hidden" alt="">
-        <canvas id="overlay"></canvas>
-        <div class="empty" id="empty">
-          <h2>Show me your hand</h2>
-          <p>Your webcam frames go to the same model and decision logic as the ESP32-CAM. Nothing is recorded.</p>
-          <button class="btn" id="startBtn">Turn on webcam</button>
-          <input type="file" id="photoInput" accept="image/*" class="hidden">
-        </div>
+<a class="skip" href="#workings">Skip to how it decided</a>
+<main class="desk">
+  <div class="look">
+    <header class="top">
+      <div class="brand">GestureGrasp</div>
+      <p class="cam-line" id="camLine" role="status"><i class="lamp" id="lamp"></i><span id="camText">Checking the camera</span></p>
+      <div class="source" role="tablist" aria-label="Camera source">
+        <button class="tab" role="tab" aria-selected="true" data-src="esp32">ESP32-CAM</button>
+        <button class="tab" role="tab" aria-selected="false" data-src="webcam">Webcam</button>
+        <button class="tab" role="tab" aria-selected="false" data-src="photo">Photo</button>
       </div>
-      <div class="caption">
-        <p class="says unsure" id="says" aria-live="polite">Waiting for a hand…</p>
-        <div class="hold" id="hold" title="Hold progress"><i></i></div>
-        <div class="caption-row">
-          <p class="next" id="next">Next: <b>show the call-me sign to start.</b></p>
-          <span class="sent" id="sent">Sent</span>
-        </div>
+    </header>
+
+    <section class="stage" id="stage" aria-label="Camera">
+      <video id="video" class="mirror hidden" autoplay playsinline muted></video>
+      <img id="view" class="view hidden" alt="Live camera view with the hand and objects marked">
+      <canvas id="overlay"></canvas>
+      <div class="empty" id="empty">
+        <h2 id="emptyTitle">Waiting for the camera</h2>
+        <p id="emptyText"></p>
+        <button class="plain hidden" id="startBtn">Turn on webcam</button>
+        <input type="file" id="photoInput" accept="image/*" class="hidden" aria-label="Choose a photo">
       </div>
+      <div class="hold" id="hold" aria-hidden="true"><i></i></div>
     </section>
 
-    <section class="card flow" aria-label="Where the robot is in the task">
-      <p class="label">Robot's task, step by step</p>
-      <ol class="steps" id="steps"></ol>
-    </section>
+    <div class="reading">
+      <p class="says unsure" id="says" aria-live="polite">Waiting for a hand</p>
+      <span class="sent" id="sent" aria-live="polite"></span>
     </div>
 
-    <div class="side">
-      <section class="card">
-        <p class="label">What the model sees</p>
-        <ul class="bars" id="bars"></ul>
-        <p class="legend-note"><span class="tick-key"></span> confidence a gesture needs before it can count</p>
-      </section>
+    <section aria-label="Hand signs">
+      <ul class="signs" id="gestures"></ul>
+    </section>
 
-      <section class="card">
-        <p class="label">Decision</p>
-        <dl class="facts">
-          <dt>Gesture</dt><dd id="fGesture">—</dd>
-          <dt>Confidence</dt><dd id="fConf">—</dd>
-          <dt>Lead over runner-up</dt><dd id="fMargin">—</dd>
-          <dt>Held for</dt><dd id="fHold">—</dd>
-          <dt>Command</dt><dd id="fIntent">—</dd>
-        </dl>
-        <p class="reason" id="fReason"></p>
-      </section>
-
-      <section class="card">
-        <p class="label">Pointing &amp; objects</p>
-        <dl class="facts">
-          <dt>Pointing at</dt><dd id="pTarget">—</dd>
-          <dt>Off-centre</dt><dd id="pAngle">—</dd>
-          <dt>Steady on it</dt><dd id="pSteady">—</dd>
-        </dl>
-        <div class="objects" id="objects"></div>
-      </section>
-
-      <section class="card">
-        <p class="label">Speed</p>
-        <dl class="facts">
-          <dt>Server processing</dt><dd id="sLatency">—</dd>
-          <dt id="sRttLabel">Camera to result</dt><dd id="sRtt">—</dd>
-          <dt>Frames per second</dt><dd id="sFps">—</dd>
-        </dl>
-      </section>
+    <div class="switches">
+      <label class="switch hidden" id="mirrorWrap"><input type="checkbox" id="mirror" checked> Mirror my view</label>
+      <label class="switch" id="speakWrap"><input type="checkbox" id="speak"> Read prompts aloud here</label>
     </div>
   </div>
 
+  <aside class="plate" aria-label="Robot status">
+    <ol class="steps" id="steps" aria-hidden="true"></ol>
+    <p class="state-name" id="stateName">Asleep</p>
+    <h1 class="prompt" id="next" aria-live="polite">Show the <span class="keep">call-me</span> sign to start.</h1>
+    <div class="sign-now">
+      <div class="ring" aria-hidden="true">
+        <svg viewBox="0 0 100 100">
+          <circle class="arc track" cx="50" cy="50" r="46" pathLength="100"/>
+          <circle class="arc fill" id="ringFill" cx="50" cy="50" r="46" pathLength="100"/>
+          <svg id="signNow" x="19" y="19" width="62" height="62" viewBox="-.62 -.62 1.24 1.24"></svg>
+        </svg>
+      </div>
+      <p class="ring-note" id="ringNote"></p>
+    </div>
+    <div class="safety">
+      <button class="estop" id="stopBtn" aria-label="Stop the robot">STOP</button>
+      <div class="safety-note">
+        <p class="wide-only">Anyone can stop the robot. Press this, or the <kbd>Esc</kbd> key.</p>
+        <button class="plain-btn" id="resetBtn">Start over</button>
+      </div>
+      <p class="stop-error hidden" id="stopError" role="alert">Stop did not reach the server. Check the connection, or stop the robot by hand.</p>
+    </div>
+  </aside>
+</main>
 
-  <div class="lower">
-    <section class="card">
-      <p class="label">Robot (top-down)</p>
-      <svg class="map" id="map" viewBox="0 0 640 600" role="img" aria-label="Robot map"></svg>
-      <p class="robot-line" id="robotLine">—</p>
+<section class="workings" id="workings" aria-label="How it decided">
+  <h2>How it decided</h2>
+  <p>What the system read from the last frame, and why it acted or waited.</p>
+  <div class="panels">
+    <section class="panel p-bars">
+      <h3>How sure the model is</h3>
+      <ul class="bars" id="bars"></ul>
+      <p class="note"><span class="tick-key"></span>The red mark is how sure it must be before a sign counts.</p>
     </section>
-    <section class="card">
-      <p class="label">Commands sent</p>
-      <ol class="log" id="log"><li class="none">Hold a gesture until the bar fills to send a command.</li></ol>
+
+    <section class="panel p-decision">
+      <h3>This sign</h3>
+      <dl class="facts">
+        <dt>Sign</dt><dd id="fGesture">None</dd>
+        <dt>Confidence</dt><dd id="fConf">None</dd>
+        <dt>Lead over next guess</dt><dd id="fMargin">None</dd>
+        <dt>Held for</dt><dd id="fHold">None</dd>
+        <dt>Command</dt><dd id="fIntent">None</dd>
+      </dl>
+      <p class="note" id="fReason"></p>
     </section>
-    <section class="card">
-      <p class="label">Gestures it understands</p>
-      <ul class="gestures" id="gestures"></ul>
+
+    <section class="panel p-speed">
+      <h3>Pointing</h3>
+      <dl class="facts">
+        <dt>Target</dt><dd id="pTarget">None</dd>
+        <dt>Off centre</dt><dd id="pAngle">None</dd>
+        <dt>Steady on it</dt><dd id="pSteady">None</dd>
+      </dl>
+      <div class="objects" id="objects"></div>
+    </section>
+
+    <section class="panel p-map">
+      <h3>Where the robot is</h3>
+      <svg class="map" id="map" viewBox="0 0 640 600" role="img" aria-label="Top-down map of the room"></svg>
+      <p class="note" id="robotLine"></p>
+    </section>
+
+    <section class="panel p-log">
+      <h3>Commands sent</h3>
+      <ol class="log" id="log"><li class="none">Hold a sign until the ring fills to send a command.</li></ol>
+    </section>
+
+    <section class="panel p-about">
+      <h3>Speed</h3>
+      <dl class="facts">
+        <dt>Processing</dt><dd id="sLatency">None</dd>
+        <dt id="sRttLabel">Camera to result</dt><dd id="sRtt">None</dd>
+        <dt>Frames a second</dt><dd id="sFps">None</dd>
+      </dl>
+      <div class="about" id="footer" style="margin-top:22px"></div>
     </section>
   </div>
+</section>
 
-  <footer id="footer"></footer>
-</div>
+<div class="stop-bar"><button id="stopBarBtn">Stop the robot</button></div>
 
 <script>
 const token = new URLSearchParams(location.search).get("token");
 const withToken = (url) => token ? `${url}${url.includes("?") ? "&" : "?"}token=${encodeURIComponent(token)}` : url;
 const $ = (id) => document.getElementById(id);
 
+/* Real hands from the dataset, made by scripts/make_sign_glyphs.py. p = 21 landmarks, order = back to front. */
+const SIGNS = {"call":{"p":[[-0.099,-0.338],[-0.249,-0.172],[-0.337,0.022],[-0.407,0.176],[-0.5,0.273],[-0.152,0.238],[0.04,0.338],[0.052,0.254],[0.008,0.173],[-0.028,0.187],[0.15,0.277],[0.152,0.19],[0.103,0.121],[0.092,0.102],[0.244,0.192],[0.238,0.119],[0.185,0.05],[0.199,0.002],[0.336,0.138],[0.432,0.21],[0.5,0.273]],"order":["thumb","index","middle","ring","pinky"]},"point":{"p":[[0.16,0.5],[0.145,0.199],[0.101,-0.066],[0.027,-0.229],[-0.066,-0.263],[0.22,-0.168],[0.224,-0.297],[0.224,-0.415],[0.22,-0.5],[0.234,-0.046],[-0.189,-0.169],[-0.196,-0.053],[-0.091,-0.003],[0.187,0.116],[-0.234,0.027],[-0.196,0.112],[-0.074,0.137],[0.103,0.284],[-0.232,0.199],[-0.204,0.243],[-0.089,0.284]],"order":["thumb","middle","ring","pinky","index"]},"like":{"p":[[0.368,0.335],[0.24,0.087],[0.085,-0.13],[-0.006,-0.329],[-0.011,-0.5],[-0.191,-0.012],[-0.368,0.066],[-0.286,0.087],[-0.181,0.071],[-0.205,0.17],[-0.353,0.218],[-0.274,0.23],[-0.175,0.227],[-0.189,0.344],[-0.343,0.369],[-0.268,0.375],[-0.16,0.368],[-0.16,0.5],[-0.298,0.491],[-0.23,0.492],[-0.143,0.486]],"order":["ring","middle","pinky","thumb","index"]},"dislike":{"p":[[0.393,-0.27],[0.262,-0.047],[0.059,0.155],[-0.069,0.329],[-0.105,0.5],[-0.237,-0.038],[-0.393,0.005],[-0.19,0.007],[-0.105,-0.002],[-0.234,-0.189],[-0.351,-0.148],[-0.112,-0.128],[-0.04,-0.146],[-0.198,-0.343],[-0.33,-0.319],[-0.105,-0.268],[-0.014,-0.274],[-0.138,-0.5],[-0.27,-0.486],[-0.128,-0.415],[-0.04,-0.398]],"order":["pinky","ring","middle","index","thumb"]},"stop":{"p":[[0.024,0.5],[-0.136,0.4],[-0.203,0.219],[-0.2,0.044],[-0.243,-0.083],[-0.087,-0.002],[-0.076,-0.213],[-0.064,-0.338],[-0.048,-0.444],[0.024,-0.013],[0.041,-0.238],[0.052,-0.383],[0.062,-0.5],[0.119,0.017],[0.146,-0.191],[0.145,-0.317],[0.14,-0.419],[0.213,0.084],[0.239,-0.077],[0.243,-0.179],[0.241,-0.267]],"order":["ring","middle","pinky","index","thumb"]},"peace":{"p":[[0.013,0.5],[-0.096,0.371],[-0.124,0.208],[0.003,0.081],[0.125,-0.011],[-0.11,-0.027],[-0.168,-0.233],[-0.199,-0.362],[-0.217,-0.474],[0.013,-0.017],[0.072,-0.247],[0.129,-0.385],[0.184,-0.5],[0.111,0.051],[0.153,-0.031],[0.106,0.078],[0.073,0.163],[0.189,0.148],[0.217,0.067],[0.166,0.137],[0.125,0.203]],"order":["middle","pinky","index","ring","thumb"]},"ok":{"p":[[0.024,0.5],[-0.124,0.426],[-0.26,0.303],[-0.358,0.207],[-0.361,0.105],[-0.09,0.022],[-0.194,-0.109],[-0.272,-0.058],[-0.313,0.024],[0.024,-0.016],[0.015,-0.239],[-0.024,-0.382],[-0.053,-0.5],[0.132,0.013],[0.168,-0.2],[0.169,-0.345],[0.162,-0.47],[0.228,0.097],[0.308,-0.049],[0.345,-0.157],[0.361,-0.26]],"order":["thumb","middle","ring","index","pinky"]},"fist":{"p":[[0.252,0.5],[-0.087,0.391],[-0.393,0.033],[-0.259,-0.263],[0.021,-0.241],[-0.26,-0.238],[-0.292,-0.5],[-0.248,-0.196],[-0.226,-0.11],[-0.037,-0.276],[-0.067,-0.493],[-0.034,-0.167],[-0.006,-0.118],[0.169,-0.269],[0.172,-0.469],[0.156,-0.148],[0.16,-0.068],[0.393,-0.239],[0.352,-0.391],[0.326,-0.169],[0.329,-0.081]],"order":["pinky","ring","middle","index","thumb"]},"no_gesture":{"p":[[0.138,0.5],[0.316,0.358],[0.372,0.164],[0.354,-0.006],[0.35,-0.125],[0.285,-0.057],[0.187,-0.329],[0.087,-0.44],[0.005,-0.5],[0.138,-0.033],[0.001,-0.307],[-0.097,-0.422],[-0.165,-0.481],[-0.005,0.032],[-0.14,-0.209],[-0.224,-0.333],[-0.279,-0.403],[-0.137,0.122],[-0.26,-0.065],[-0.326,-0.169],[-0.372,-0.243]],"order":["thumb","index","middle","ring","pinky"]}};
+const FINGERS = { thumb: [1, 2, 3, 4], index: [5, 6, 7, 8], middle: [9, 10, 11, 12], ring: [13, 14, 15, 16], pinky: [17, 18, 19, 20] };
+const PALM = [0, 1, 5, 9, 13, 17];
+const LIVE_ORDER = ["pinky", "ring", "middle", "index", "thumb"];
+
+/* One bold shape: a filled palm, then each finger with a thin gap around it so folded fingers stay readable. */
+function handShape(points, order, gap) {
+  const line = (ids) => ids.map(i => `${points[i][0].toFixed(3)},${points[i][1].toFixed(3)}`).join(" ");
+  let out = `<polygon points="${line(PALM)}" fill="currentColor" stroke="currentColor" stroke-width=".09" stroke-linejoin="round"/>`;
+  for (const name of order) {
+    const pts = line(FINGERS[name]);
+    out += `<polyline points="${pts}" fill="none" stroke="${gap}" stroke-width=".18" stroke-linecap="round" stroke-linejoin="round"/>
+            <polyline points="${pts}" fill="none" stroke="currentColor" stroke-width=".13" stroke-linecap="round" stroke-linejoin="round"/>`;
+  }
+  return out;
+}
+const signSvg = (g, gap) => `<svg viewBox="-.62 -.62 1.24 1.24" aria-hidden="true">${handShape(SIGNS[g].p, SIGNS[g].order, gap)}</svg>`;
+
+/* Fit a live hand from the camera into the same box as the printed signs. */
+function fitHand(landmarks, frameSize, mirror) {
+  const [fw, fh] = frameSize || [640, 480];
+  const pts = landmarks.map(([x, y]) => [(mirror ? 1 - x : x) * fw, y * fh]);
+  const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+  const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+  const size = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys)) || 1;
+  return pts.map(([x, y]) => [(x - cx) / size, (y - cy) / size]);
+}
+
 const GESTURE = {
-  call:       { name: "Call me",     emoji: "🤙", does: "Wake up" },
-  point:      { name: "Point",       emoji: "👉", does: "Pick an object" },
-  like:       { name: "Thumbs up",   emoji: "👍", does: "Yes, fetch it" },
-  dislike:    { name: "Thumbs down", emoji: "👎", does: "No, not that" },
-  stop:       { name: "Stop",        emoji: "✋", does: "Stop now" },
-  peace:      { name: "Peace",       emoji: "✌️", does: "Go home" },
-  ok:         { name: "OK",          emoji: "👌", does: "Done, thanks" },
-  fist:       { name: "Fist",        emoji: "✊", does: "Not a command" },
-  no_gesture: { name: "Relaxed hand", emoji: "🖐", does: "Not a command" },
+  call:       { name: "Call me",     does: "Wake up" },
+  point:      { name: "Point",       does: "Pick an object" },
+  like:       { name: "Thumbs up",   does: "Yes, fetch it" },
+  dislike:    { name: "Thumbs down", does: "No, not that" },
+  stop:       { name: "Open palm",   does: "Stop now" },
+  peace:      { name: "Peace",       does: "Go home" },
+  ok:         { name: "OK",          does: "Done, thanks" },
+  fist:       { name: "Fist",        does: "Not a command" },
+  no_gesture: { name: "Relaxed hand", does: "Not a command" },
 };
 const ORDER = ["call", "point", "like", "dislike", "stop", "peace", "ok", "fist", "no_gesture"];
 const INTENT = { WAKE: "Wake up", SELECT_TARGET: "Pick object", CONFIRM: "Confirm", REJECT: "Reject",
@@ -312,25 +406,28 @@ const INTENT = { WAKE: "Wake up", SELECT_TARGET: "Pick object", CONFIRM: "Confir
 const STATE = { IDLE: "Asleep", LISTENING: "Listening", TARGET_PROPOSED: "Object proposed",
   EXECUTING: "Fetching", AWAIT_FEEDBACK: "Delivered", RETURNING: "Going home", STOPPED: "Stopped" };
 const MAIN_FLOW = ["IDLE", "LISTENING", "TARGET_PROPOSED", "EXECUTING", "AWAIT_FEEDBACK"];
+/* The sign to show someone who has no hand up yet. */
+const NEXT_SIGN = { IDLE: "call", LISTENING: "point", TARGET_PROPOSED: "like", EXECUTING: "stop",
+  AWAIT_FEEDBACK: "ok", RETURNING: "stop", STOPPED: "call" };
 
 let config = null, source = "esp32", ws = null, stream = null, pollTimer = null, camera = null;
 let sentAt = 0, lastFrameAt = 0, fps = 0, lastState = null, lastOverlay = null;
+let lastNewFrame = 0, processedBefore = null, clientFps = 0;
 const capture = document.createElement("canvas");
 
 /* ---------- static parts ---------- */
 function buildStatic() {
   $("bars").innerHTML = ORDER.map(g => `
     <li class="bar" data-g="${g}">
-      <span class="name">${GESTURE[g].emoji} ${GESTURE[g].name}</span>
+      ${signSvg(g, "var(--surface)")}
+      <span class="name">${GESTURE[g].name}</span>
       <span class="track"><span class="fill"></span><span class="tick"></span></span>
-      <span class="pct">—</span>
+      <span class="pct">0%</span>
     </li>`).join("");
   $("gestures").innerHTML = ORDER.slice(0, 7).map(g => `
-    <li class="g" data-g="${g}"><span class="e">${GESTURE[g].emoji}</span><b>${GESTURE[g].name}</b>
-    <small>${GESTURE[g].does}<br>hold ${config ? config.gestures[g].hold_time : "?"} s</small></li>`).join("");
-  const flow = MAIN_FLOW.map(s => `<li class="step" data-s="${s}">${STATE[s]}</li>`).join('<li class="arrow" aria-hidden="true">→</li>');
-  $("steps").innerHTML = flow + `<li class="branch"><small>any time:</small>
-    <span class="step" data-s="RETURNING">${STATE.RETURNING}</span><span class="step" data-s="STOPPED">${STATE.STOPPED}</span></li>`;
+    <li class="g" data-g="${g}">${signSvg(g, "var(--gap, #fff)")}<b>${GESTURE[g].name}</b>
+    <small>${GESTURE[g].does}</small></li>`).join("");
+  $("steps").innerHTML = MAIN_FLOW.map(s => `<li class="step" data-s="${s}"></li>`).join("");
   if (config) {
     document.querySelectorAll(".bar").forEach(el => {
       const need = config.gestures[el.dataset.g]?.min_conf ?? 0.5;
@@ -344,25 +441,23 @@ async function loadConfig() {
   try {
     config = await (await fetch("/config")).json();
     const m = config.model;
-    const objects = (m.detector || "").startsWith("mock") ? "test objects (no YOLO)" : "YOLO on the Pi";
-    setChip("modelChip", "ok", `Neural net (features ${m.feature_version}) · ${objects}`);
-    const pct = (v) => v == null ? "—" : `${(v * 100).toFixed(1)}%`;
-    $("footer").innerHTML = `
-      <span>Measured on people the model never saw:</span>
-      <span>accuracy score (macro-F1) <b>${m.live_macro_f1?.toFixed(3) ?? "—"}</b></span>
-      <span>STOP caught <b>${pct(m.stop_recall)}</b></span>
-      <span>users aged 60+ <b>${m.age_60_plus_macro_f1?.toFixed(3) ?? "—"}</b></span>
-      <span>trained ${m.trained ? new Date(m.trained).toLocaleDateString() : "—"}</span>`;
+    const device = (m.detector_device || "").startsWith("cuda") ? "the GPU" : "the CPU";
+    const objects = (m.detector || "").startsWith("mock") ? "Objects are fixed test objects, not real detections." : `Objects are found by YOLO on ${device}.`;
+    const pct = (v) => v == null ? "not measured" : `${(v * 100).toFixed(0)}%`;
+    const score = (v) => v == null ? "not measured" : v.toFixed(2);
+    $("footer").innerHTML = `<p>${objects}</p>
+      <p>On people it never saw in training, its macro-F1 score was <b>${score(m.live_macro_f1)}</b> overall and
+      <b>${score(m.age_60_plus_macro_f1)}</b> for people over 60. It caught <b>${pct(m.stop_recall)}</b> of stop signs.</p>
+      <p>It has not been tested with patients yet.</p>`;
   } catch (e) {
-    setChip("modelChip", "bad", "Server not reachable");
+    setCamLine("bad", "Server not reachable. Check that it is running.");
   }
   buildStatic();
 }
 
-function setChip(id, cls, text) {
-  const chip = $(id);
-  chip.querySelector(".dot").className = `dot ${cls}`;
-  chip.querySelector("span:last-child").textContent = text;
+function setCamLine(cls, text) {
+  $("lamp").className = `lamp ${cls}`;
+  $("camText").textContent = text;
 }
 
 /* ---------- sources ---------- */
@@ -374,35 +469,53 @@ function stopAll() {
   $("view").removeAttribute("src");
   lastOverlay = null;
   clearOverlay();
-  setChip("connChip", "", "Not streaming");
+}
+
+function showEmpty(title, text, button) {
+  $("empty").classList.remove("hidden");
+  $("emptyTitle").textContent = title;
+  $("emptyText").innerHTML = text;
+  $("startBtn").classList.toggle("hidden", !button);
+  if (button) $("startBtn").textContent = button;
+}
+
+function clearReading() {
+  $("says").textContent = "Waiting for a hand";
+  $("says").className = "says unsure";
+  $("hold").querySelector("i").style.width = "0";
+  $("ringFill").style.strokeDashoffset = 100;
+  if (lastState) renderState(lastState, null);
 }
 
 function selectSource(src) {
   source = src;
   document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", String(t.dataset.src === src)));
   stopAll();
+  clearReading();
   $("mirrorWrap").classList.toggle("hidden", src !== "webcam");
-  const empty = $("empty");
-  empty.classList.remove("hidden");
   if (src === "webcam") {
-    empty.querySelector("h2").textContent = "Show me your hand";
-    empty.querySelector("p").textContent = "Your webcam frames go to the same model and decision logic as the ESP32-CAM. Nothing is recorded.";
-    $("startBtn").textContent = "Turn on webcam";
+    showEmpty("Use this computer's webcam", "Frames go through the same model and decisions as the robot's camera. Nothing is recorded.", "Turn on webcam");
   } else if (src === "esp32") {
-    empty.classList.add("hidden");
+    showCameraWait();
     startCameraWatch();
   } else {
-    empty.querySelector("h2").textContent = "Try a photo";
-    empty.querySelector("p").textContent = "Pick a photo with a hand in it. A single photo shows what the model reads; commands need a held gesture, so none are sent.";
-    $("startBtn").textContent = "Choose a photo";
+    showEmpty("Try a photo", "Choose a photo with a hand in it. One photo shows what the model reads. Commands need a held sign, so none are sent.", "Choose a photo");
   }
+  renderCameraLine();
+}
+
+function showCameraWait() {
+  const noServerCamera = camera?.state === "disabled";
+  showEmpty("Waiting for the camera", noServerCamera
+    ? "Start the camera client: <code>python run_serbot.py --esp32 &lt;camera address&gt;</code>"
+    : "The ESP32-CAM is not sending video yet. Check its power and Wi-Fi.");
 }
 
 async function startWebcam() {
   try {
     stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: false });
   } catch (e) {
-    $("empty").querySelector("p").textContent = "The browser blocked the camera. Allow camera access for this page (camera icon in the address bar), then try again.";
+    showEmpty("The browser blocked the camera", "Allow camera access for this page, then try again. Browsers only allow it on this computer or over HTTPS.", "Try again");
     return;
   }
   const video = $("video");
@@ -417,14 +530,14 @@ function openSocket() {
   const proto = location.protocol === "https:" ? "wss" : "ws";
   ws = new WebSocket(withToken(`${proto}://${location.host}/ws/stream`));
   ws.binaryType = "arraybuffer";
-  ws.onopen = () => { setChip("connChip", "ok", "Streaming your webcam"); sendFrame(); };
+  ws.onopen = () => { setCamLine("good", "Webcam on"); sendFrame(); };
   ws.onmessage = (ev) => {
     const result = JSON.parse(ev.data);
     render(result, performance.now() - sentAt);
     requestAnimationFrame(sendFrame);     // lock-step: next frame only after this answer
   };
   ws.onclose = (ev) => {
-    setChip("connChip", "bad", ev.code === 1008 ? "Wrong or missing token (?token=…)" : "Disconnected, retrying…");
+    setCamLine("bad", ev.code === 1008 ? "Wrong or missing token. Add ?token= to the address." : "Disconnected. Retrying.");
     if (source === "webcam" && stream) setTimeout(openSocket, 1500);
   };
 }
@@ -447,16 +560,21 @@ function startCameraWatch() {
   const view = $("view");
   view.src = withToken("/video");
   view.classList.remove("hidden");
-  setChip("connChip", "", "Waiting for frames…");
+  lastNewFrame = 0;
   let lastSeen = null;
   pollTimer = setInterval(async () => {
     try {
       const r = await (await fetch("/latest")).json();
-      if (r.waiting) { setChip("connChip", "", "No frames yet: check the ESP32-CAM"); return; }
+      if (r.waiting) return;
       const key = JSON.stringify([r.latency_ms, r.hold_progress, r.confidence, r.state]);
-      if (key !== lastSeen) { setChip("connChip", "ok", "Watching the ESP32-CAM"); lastSeen = key; render(r, null, false); }
-    } catch (e) { setChip("connChip", "bad", "Server not reachable"); }
-  }, 200);
+      if (key !== lastSeen) {
+        lastSeen = key;
+        lastNewFrame = performance.now();
+        $("empty").classList.add("hidden");
+        render(r, null, false);
+      }
+    } catch (e) { setCamLine("bad", "Server not reachable. Check that it is running."); }
+  }, 150);
 }
 
 async function sendPhoto(file) {
@@ -469,33 +587,47 @@ async function sendPhoto(file) {
   const res = await fetch(withToken("/infer"), { method: "POST", body: file });
   if (!res.ok) { $("says").textContent = "That file could not be read as an image."; return; }
   render(await res.json(), performance.now() - t0);
-  setChip("connChip", "ok", "Photo analysed");
+  setCamLine("good", "Photo analysed");
 }
 
 /* ---------- camera status and spoken prompts ---------- */
 async function pollCamera() {
   try {
     camera = await (await fetch("/camera")).json();
-    renderCamera();
+    if (camera.state === "disabled") {
+      const state = await (await fetch("/state")).json();
+      if (processedBefore !== null) clientFps = Math.max(0, state.frames_processed - processedBefore);
+      processedBefore = state.frames_processed;
+    }
+    renderCameraLine();
   } catch (e) {
     camera = null;
-    setChip("camChip", "bad", "Camera: server not reachable");
+    setCamLine("bad", "Server not reachable. Check that it is running.");
   }
 }
 
-function renderCamera() {
-  if (camera.state === "disabled") { setChip("camChip", "", "No camera configured"); return; }
-  const parts = [];
-  if (camera.state === "streaming") {
-    parts.push(camera.mode === "capture" ? "ESP32-CAM slow mode" : "ESP32-CAM connected");
-    if (camera.fps) parts.push(`${camera.fps.toFixed(0)} fps`);
-    if (camera.last_frame_age_ms != null) parts.push(`${camera.last_frame_age_ms.toFixed(0)} ms old`);
-    if (camera.esp32?.rssi != null) parts.push(`Wi-Fi ${camera.esp32.rssi} dBm`);
-    setChip("camChip", "ok", parts.join(" · "));
+function wifiWord(rssi) {
+  return rssi >= -60 ? "strong" : rssi >= -72 ? "fair" : "weak";
+}
+
+function renderCameraLine() {
+  if (source !== "esp32") {
+    if (source === "photo" || !stream) setCamLine("", source === "photo" ? "Using a photo" : "Webcam is off");
+    return;
+  }
+  if (!camera) return;
+  if (camera.state === "disabled") {
+    const live = lastNewFrame && performance.now() - lastNewFrame < 3000;
+    if (live) setCamLine("good", `Camera connected, ${clientFps} frames a second`);
+    else { setCamLine("", "Waiting for the camera client"); if (!$("view").classList.contains("hidden")) showCameraWait(); }
+  } else if (camera.state === "streaming") {
+    const wifi = camera.esp32?.rssi != null ? `, Wi-Fi ${wifiWord(camera.esp32.rssi)}` : "";
+    const slow = camera.mode === "capture" ? " in slow mode" : "";
+    setCamLine("good", `Camera connected${slow}, ${camera.fps.toFixed(0)} frames a second${wifi}`);
   } else if (camera.state === "connecting") {
-    setChip("camChip", "", "ESP32-CAM connecting…");
+    setCamLine("", "Connecting to the camera");
   } else {
-    setChip("camChip", "bad", "ESP32-CAM lost, reconnecting…");
+    setCamLine("bad", "Camera lost. Reconnecting by itself.");
   }
 }
 
@@ -510,7 +642,7 @@ function speakPrompt(message) {
 
 /* ---------- rendering ---------- */
 function captionFor(r) {
-  if (!r.hand_detected) return { html: "No hand in view.", cls: "unsure" };
+  if (!r.hand_detected) return { html: "No hand in view", cls: "unsure" };
   const g = r.gesture, conf = r.confidence ?? 0;
   const need = config?.gestures[g]?.min_conf ?? 0.5;
   const marginOk = (r.margin ?? 1) >= (config?.margin_threshold ?? 0.2);
@@ -522,16 +654,53 @@ function captionFor(r) {
     case "call": text = "Call-me sign: waking up."; break;
     case "like": text = proposed ? `Thumbs up: yes, fetch the ${obj(proposed)}.` : "Thumbs up."; break;
     case "dislike": text = proposed ? `Thumbs down: not the ${obj(proposed)}.` : "Thumbs down."; break;
-    case "stop": text = "Stop! The robot halts."; break;
+    case "stop": text = "Open palm: stop."; break;
     case "peace": text = "Peace sign: go back to the dock."; break;
     case "ok": text = "OK: got it, thank you."; break;
     case "fist": text = "A closed fist. Not a command."; break;
     default: text = "A relaxed hand. Not a command.";
   }
   if (conf < need || !marginOk) {
-    return { html: `Not sure yet… maybe ${GESTURE[g]?.name.toLowerCase() ?? g}?`, cls: "unsure" };
+    return { html: `Not sure yet. Maybe ${GESTURE[g]?.name.toLowerCase() ?? g}?`, cls: "unsure" };
   }
   return { html: text, cls: g === "stop" ? "stop" : "" };
+}
+
+/* A sign works now if the state machine accepts its command here. STOP works in every active state. */
+function worksNow(gesture, state) {
+  const intent = config?.gestures[gesture]?.intent;
+  if (!config?.transitions) return true;
+  if (intent === "STOP") return state !== "IDLE" && state !== "STOPPED";
+  return intent in (config.transitions[state] || {});
+}
+
+function renderState(state, r) {
+  document.documentElement.dataset.state = state;
+  $("stateName").textContent = STATE[state] || state;
+  const at = MAIN_FLOW.indexOf(state);
+  document.querySelectorAll(".step").forEach((el, i) => {
+    el.classList.toggle("on", i === at);
+    el.classList.toggle("done", at > i);
+  });
+  const hand = r?.hand_detected ? r.gesture : null;
+  document.querySelectorAll(".g").forEach(el => {
+    const can = worksNow(el.dataset.g, state), now = el.dataset.g === hand;
+    el.classList.toggle("can", can);
+    el.classList.toggle("now", now && can);
+    el.style.setProperty("--gap", now && can ? getComputedStyle(document.documentElement).getPropertyValue("--zone") : (can ? "#fff" : "var(--ground)"));
+    el.title = can ? "Works now" : "Does nothing at this step";
+    el.setAttribute("aria-label", `${GESTURE[el.dataset.g].name}, ${GESTURE[el.dataset.g].does}. ${el.title}.`);
+  });
+  const next = NEXT_SIGN[state];
+  const zone = getComputedStyle(document.documentElement).getPropertyValue("--zone");
+  const wrap = $("signNow");
+  if (r?.hand_detected && r.landmarks) {
+    wrap.innerHTML = handShape(fitHand(r.landmarks, r.frame_size, source === "webcam" && $("mirror").checked), LIVE_ORDER, zone);
+    $("ringNote").innerHTML = `<b>${GESTURE[r.gesture]?.name ?? r.gesture}</b>${r.hold_progress ? "Keep holding" : "Your hand"}`;
+  } else if (next) {
+    wrap.innerHTML = handShape(SIGNS[next].p, SIGNS[next].order, zone);
+    $("ringNote").innerHTML = `<b>${GESTURE[next].name}</b>${state === "EXECUTING" || state === "RETURNING" ? "Show this to stop it" : "Show this sign"}`;
+  }
 }
 
 let sentTimer = null;
@@ -542,16 +711,19 @@ function render(r, rttMs, drawOverlay = true) {
   lastFrameAt = now;
   speakPrompt(r.message);
 
-  // caption (signature)
+  // the reading under the camera
   const cap = captionFor(r);
   const says = $("says");
   says.innerHTML = cap.html;
   says.className = `says ${cap.cls}`;
+  const progress = r.intent_fired ? 1 : r.hold_progress || 0;
   const hold = $("hold");
-  hold.querySelector("i").style.width = `${Math.round((r.intent_fired ? 1 : r.hold_progress || 0) * 100)}%`;
+  hold.querySelector("i").style.width = `${Math.round(progress * 100)}%`;
   hold.classList.toggle("fired", !!r.intent_fired);
-  $("next").innerHTML = `Next: <b>${(r.message || "").replace(/^./, c => c.toLowerCase())}</b>`;
+  $("ringFill").style.strokeDashoffset = 100 - progress * 100;
+  $("next").innerHTML = (r.message || "").replace("call-me", '<span class="keep">call-me</span>');
   renderCommands(r.commands);
+  renderState(r.state, r);
 
   // probability bars (smoothed: what the decision logic acts on)
   const probs = r.probabilities || {};
@@ -559,7 +731,7 @@ function render(r, rttMs, drawOverlay = true) {
   document.querySelectorAll(".bar").forEach(el => {
     const p = probs[el.dataset.g] ?? 0;
     el.querySelector(".fill").style.width = `${(p * 100).toFixed(1)}%`;
-    el.querySelector(".pct").textContent = r.hand_detected ? `${Math.round(p * 100)}%` : "—";
+    el.querySelector(".pct").textContent = r.hand_detected ? `${Math.round(p * 100)}%` : "0%";
     el.classList.toggle("top", r.hand_detected && el.dataset.g === top);
   });
 
@@ -568,43 +740,35 @@ function render(r, rttMs, drawOverlay = true) {
   const need = meta?.min_conf ?? 0.5, mt = config?.margin_threshold ?? 0.2;
   const ok = (cond, text) => `<span class="${cond ? "pass" : "fail"}">${text}</span>`;
   if (r.hand_detected) {
-    $("fGesture").textContent = `${GESTURE[g]?.emoji ?? ""} ${GESTURE[g]?.name ?? g}`;
-    $("fConf").innerHTML = ok(r.confidence >= need, `${(r.confidence * 100).toFixed(1)}% (needs ${Math.round(need * 100)}%)`);
-    $("fMargin").innerHTML = r.margin == null ? "—" : ok(r.margin >= mt, `${(r.margin * 100).toFixed(0)} pts (needs ${Math.round(mt * 100)})`);
+    $("fGesture").textContent = GESTURE[g]?.name ?? g;
+    $("fConf").innerHTML = ok(r.confidence >= need, `${(r.confidence * 100).toFixed(0)}%, needs ${Math.round(need * 100)}%`);
+    $("fMargin").innerHTML = r.margin == null ? "None" : ok(r.margin >= mt, `${(r.margin * 100).toFixed(0)} points, needs ${Math.round(mt * 100)}`);
     const holdTime = meta?.hold_time ?? 0;
-    $("fHold").textContent = meta?.actionable ? `${((r.hold_progress || 0) * holdTime).toFixed(2)} of ${holdTime} s` : "not a command";
-    $("fIntent").textContent = meta?.actionable ? (INTENT[r.intent] || r.intent) : "none";
+    $("fHold").textContent = meta?.actionable ? `${((r.hold_progress || 0) * holdTime).toFixed(1)} of ${holdTime} s` : "Not a command";
+    $("fIntent").textContent = meta?.actionable ? (INTENT[r.intent] || r.intent) : "None";
   } else {
-    ["fGesture", "fConf", "fMargin", "fHold", "fIntent"].forEach(id => $(id).textContent = "—");
+    ["fGesture", "fConf", "fMargin", "fHold", "fIntent"].forEach(id => $(id).textContent = "None");
   }
   $("fReason").textContent = explainReason(r);
 
   // pointing
   const pt = r.pointing;
-  $("pTarget").innerHTML = pt ? `<span class="pass">${pt.label}</span>${pt.direct_hit ? " (direct hit)" : ""}`
-    : (r.hand_detected && r.gesture !== "point" ? "only while pointing" : "—");
-  $("pAngle").textContent = pt?.angular_deviation_deg != null ? `${pt.angular_deviation_deg.toFixed(1)}°` : "—";
-  $("pSteady").textContent = pt ? `${Math.round((pt.hold_progress || 0) * 100)}%` : "—";
+  $("pTarget").innerHTML = pt ? `<span class="pass">${pt.label}</span>` : "None";
+  $("pAngle").textContent = pt?.angular_deviation_deg != null ? `${pt.angular_deviation_deg.toFixed(0)}°` : "None";
+  $("pSteady").textContent = pt ? `${Math.round((pt.hold_progress || 0) * 100)}%` : "None";
   const objs = r.objects || [];
   $("objects").innerHTML = objs.length
-    ? objs.map(o => `<span class="obj ${o.label === r.pointing_at ? "hit" : ""}">${o.label} ${Math.round(o.confidence * 100)}%</span>`).join("")
-    : `<span class="obj">No ${config ? config.allowed_objects.slice(0, 3).join(", ") : "objects"}… in view</span>`;
+    ? objs.map(o => `<span class="obj ${o.label === r.pointing_at ? "hit" : ""}">${o.label}</span>`).join("")
+    : `<span class="obj">No known objects in view</span>`;
 
   // speed
-  $("sLatency").textContent = r.latency_ms != null ? `${r.latency_ms.toFixed(0)} ms` : "—";
-  const watching = source === "esp32" && camera?.loop;
+  $("sLatency").textContent = r.latency_ms != null ? `${r.latency_ms.toFixed(0)} ms` : "None";
+  const loop = source === "esp32" ? camera?.loop : null;
   $("sRttLabel").textContent = source === "esp32" ? "Camera to result" : "Round trip";
-  $("sRtt").textContent = watching ? `${camera.loop.frame_age_ms.toFixed(0)} ms` : (rttMs != null ? `${rttMs.toFixed(0)} ms` : "—");
-  const shownFps = watching ? camera.loop.fps : fps;
-  $("sFps").textContent = shownFps ? shownFps.toFixed(1) : "—";
+  $("sRtt").textContent = loop ? `${loop.frame_age_ms.toFixed(0)} ms` : (rttMs != null ? `${rttMs.toFixed(0)} ms` : "Not available");
+  const shownFps = loop ? loop.fps : (source === "esp32" ? clientFps : fps);
+  $("sFps").textContent = shownFps ? shownFps.toFixed(0) : "None";
 
-  // task steps, gestures, robot
-  document.querySelectorAll(".step").forEach(el => {
-    const on = el.dataset.s === r.state;
-    el.classList.toggle("on", on);
-    el.classList.toggle("stopped", on && r.state === "STOPPED");
-  });
-  document.querySelectorAll(".g").forEach(el => el.classList.toggle("now", r.hand_detected && el.dataset.g === g));
   if (r.state !== lastState) lastState = r.state;
   drawMap(r);
   lastOverlay = drawOverlay ? r : null;
@@ -615,18 +779,18 @@ function explainReason(r) {
   const why = r.reason || "";
   const g = GESTURE[r.gesture]?.name ?? r.gesture;
   let m;
-  if (!r.hand_detected) return why.includes("buffer") ? "Hand lost for a moment; keeping the hold for a few frames." : "";
+  if (!r.hand_detected) return why.includes("buffer") ? "Hand lost for a moment. Keeping the hold for a few frames." : "";
   if ((m = why.match(/not permitted in state '(\w+)'/))) {
     const need = { IDLE: "Wake the robot with the call-me sign first.",
-                   STOPPED: "The robot is stopped; show the call-me sign to continue." }[m[1]];
-    return `${g} doesn't do anything while the robot is ${(STATE[m[1]] || m[1]).toLowerCase()}. ${need || ""}`.trim();
+                   STOPPED: "The robot is stopped. Show the call-me sign to continue." }[m[1]];
+    return `${g} does nothing while the robot is ${(STATE[m[1]] || m[1]).toLowerCase()}. ${need || ""}`.trim();
   }
-  if (why.startsWith("Cooldown")) return "Just sent a command; a short pause before the next one.";
-  if (why.startsWith("Below confidence")) return "Not confident enough yet. Hold the gesture clearly in view.";
-  if (why.startsWith("Insufficient margin")) return "Two gestures look alike right now; make the gesture more distinct.";
-  if (why.startsWith("Non-actionable")) return "This hand pose is deliberately ignored.";
-  if (why.startsWith("Holding")) return "Keep holding until the bar under the sentence fills.";
-  if (why.includes("fired")) return "Held long enough: command sent.";
+  if (why.startsWith("Cooldown")) return "Just sent a command. A short pause before the next one.";
+  if (why.startsWith("Below confidence")) return "Not sure enough yet. Hold the sign clearly in view.";
+  if (why.startsWith("Insufficient margin")) return "Two signs look alike right now. Make this one more distinct.";
+  if (why.startsWith("Non-actionable")) return "This hand pose is ignored on purpose.";
+  if (why.startsWith("Holding")) return "Keep holding until the ring fills.";
+  if (why.includes("fired")) return "Held long enough. Command sent.";
   return why;
 }
 
@@ -638,7 +802,7 @@ function renderCommands(commands) {
   else if (newest.id !== lastCommandId) {
     if (lastCommandId !== undefined) {
       const sent = $("sent");
-      sent.textContent = `Sent: ${INTENT[newest.intent] || newest.intent} ✓`;
+      sent.textContent = `Sent: ${INTENT[newest.intent] || newest.intent}`;
       sent.classList.add("show");
       clearTimeout(sentTimer); sentTimer = setTimeout(() => sent.classList.remove("show"), 2200);
       $("hold").classList.add("fired");
@@ -648,8 +812,10 @@ function renderCommands(commands) {
   $("log").innerHTML = commands.length ? commands.slice().reverse().map(c => {
     const t = new Date(c.time * 1000).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
     const what = c.target && ["SELECT_TARGET", "CONFIRM", "REJECT"].includes(c.intent) ? `: ${c.target}` : "";
-    return `<li><time>${t}</time><span>${GESTURE[c.gesture]?.emoji ?? ""} ${INTENT[c.intent] || c.intent}${what} → ${STATE[c.state] || c.state}</span></li>`;
-  }).join("") : '<li class="none">Hold a gesture until the bar fills to send a command.</li>';
+    return `<li>${SIGNS[c.gesture] ? signSvg(c.gesture, "var(--surface)") : "<i></i>"}
+      <div><b>${INTENT[c.intent] || c.intent}${what}</b><span>Now ${(STATE[c.state] || c.state).toLowerCase()}</span></div>
+      <time>${t}</time></li>`;
+  }).join("") : '<li class="none">Hold a sign until the ring fills to send a command.</li>';
 }
 
 /* ---------- overlay: hand, ray, objects ---------- */
@@ -675,26 +841,25 @@ function drawOverlayFor(r) {
   const X = (px) => ox + (mirror ? fw - px : px) * s;
   const Y = (py) => oy + py * s;
 
-  ctx.lineWidth = 2; ctx.font = "600 13px Atkinson Hyperlegible, sans-serif";
+  ctx.lineWidth = 2; ctx.font = "600 14px 'Atkinson Hyperlegible Next', sans-serif";
   for (const o of r.objects || []) {
     const [x1, y1, x2, y2] = o.bbox;
     const left = Math.min(X(x1), X(x2)), w = Math.abs(X(x2) - X(x1));
     const hit = o.label === r.pointing_at;
-    ctx.strokeStyle = hit ? "#4fd1c5" : "rgba(255,255,255,.7)";
-    ctx.lineWidth = hit ? 3 : 2;
+    ctx.strokeStyle = hit ? "#f5b700" : "rgba(255,255,255,.75)";
+    ctx.lineWidth = hit ? 4 : 2;
     ctx.strokeRect(left, Y(y1), w, Y(y2) - Y(y1));
-    const label = `${o.label} ${Math.round(o.confidence * 100)}%`;
-    const tw = ctx.measureText(label).width + 12;
-    ctx.fillStyle = hit ? "#0f7173" : "rgba(14,23,38,.75)";
-    ctx.fillRect(left, Y(y1) - 22, tw, 20);
-    ctx.fillStyle = "#fff"; ctx.fillText(label, left + 6, Y(y1) - 7);
+    const tw = ctx.measureText(o.label).width + 12;
+    ctx.fillStyle = hit ? "#f5b700" : "rgba(16,28,46,.8)";
+    ctx.fillRect(left, Y(y1) - 22, tw, 22);
+    ctx.fillStyle = hit ? "#13294b" : "#fff"; ctx.fillText(o.label, left + 6, Y(y1) - 6);
   }
 
   if (r.pointing_ray && r.gesture === "point") {
     const { origin, direction } = r.pointing_ray;
     const len = Math.max(fw, fh) * 1.5;
     const dx = mirror ? -direction[0] : direction[0];
-    ctx.strokeStyle = "#e8a33d"; ctx.lineWidth = 3; ctx.setLineDash([10, 7]);
+    ctx.strokeStyle = "#f5b700"; ctx.lineWidth = 3; ctx.setLineDash([10, 7]);
     ctx.beginPath(); ctx.moveTo(X(origin[0]), Y(origin[1]));
     ctx.lineTo(X(origin[0]) + dx * len * s, Y(origin[1]) + direction[1] * len * s); ctx.stroke();
     ctx.setLineDash([]);
@@ -705,7 +870,7 @@ function drawOverlayFor(r) {
     ctx.strokeStyle = "rgba(255,255,255,.9)"; ctx.lineWidth = 2.5;
     for (const [a, b] of BONES) { ctx.beginPath(); ctx.moveTo(...pts[a]); ctx.lineTo(...pts[b]); ctx.stroke(); }
     pts.forEach(([x, y], i) => {
-      ctx.fillStyle = [4, 8, 12, 16, 20].includes(i) ? "#4fd1c5" : "#ffffff";
+      ctx.fillStyle = [4, 8, 12, 16, 20].includes(i) ? "#f5b700" : "#ffffff";
       ctx.beginPath(); ctx.arc(x, y, i === 8 ? 5 : 3.5, 0, Math.PI * 2); ctx.fill();
     });
   }
@@ -720,34 +885,40 @@ function drawMap(r) {
   const holding = robot?.holding_object;
   if (holding) fetched.add(holding);
   const proposed = r?.proposed_target;
-  let svg = "";
-  for (let x = 0; x <= 640; x += 80) svg += `<line x1="${x}" y1="0" x2="${x}" y2="600" stroke="#d3dce4" stroke-width="1"/>`;
-  for (let y = 0; y <= 600; y += 80) svg += `<line x1="0" y1="${y}" x2="640" y2="${y}" stroke="#d3dce4" stroke-width="1"/>`;
   const [dx, dy] = map.dock, [ux, uy] = map.user;
-  svg += `<rect x="${dx - 32}" y="${dy - 32}" width="64" height="64" rx="10" fill="none" stroke="#4a5672" stroke-width="2"/>
-          <text x="${dx}" y="${dy + 54}" text-anchor="middle">dock</text>
-          <circle cx="${ux}" cy="${uy}" r="20" fill="none" stroke="#14213d" stroke-width="2" stroke-dasharray="4 4"/>
-          <text x="${ux}" y="${uy + 42}" text-anchor="middle">you</text>`;
+  let svg = `<rect x="${dx - 34}" y="${dy - 34}" width="68" height="68" fill="#fff" stroke="#13294b" stroke-width="3"/>
+             <text x="${dx}" y="${dy + 60}" text-anchor="middle">Dock</text>
+             <circle cx="${ux}" cy="${uy}" r="22" fill="#fff" stroke="#13294b" stroke-width="3"/>
+             <text x="${ux + 34}" y="${uy + 9}">You</text>`;
   for (const [name, [x, y]] of Object.entries(map.objects)) {
     if (fetched.has(name)) continue;
     const sel = name === proposed;
-    svg += `<circle cx="${x}" cy="${y}" r="${sel ? 11 : 8}" fill="${sel ? "#0f7173" : "#7b869c"}"/>
-            <text x="${x}" y="${y - 16}" text-anchor="middle">${name}</text>`;
+    svg += `<rect x="${x - (sel ? 12 : 8)}" y="${y - (sel ? 12 : 8)}" width="${sel ? 24 : 16}" height="${sel ? 24 : 16}" fill="${sel ? "#f5b700" : "#566579"}" stroke="#13294b" stroke-width="${sel ? 3 : 0}"/>
+            <text x="${x}" y="${y - 20}" text-anchor="middle">${name}</text>`;
   }
   if (robot) {
     const [rx, ry] = robot.current_position;
-    const stopped = robot.is_stopped;
-    svg += `<circle cx="${rx}" cy="${ry}" r="22" fill="${stopped ? "#d9483b" : "#14213d"}"/>
-            <circle cx="${rx}" cy="${ry}" r="22" fill="none" stroke="#fff" stroke-width="3"/>`;
-    if (holding) svg += `<circle cx="${rx + 16}" cy="${ry - 16}" r="8" fill="#0f7173" stroke="#fff" stroke-width="2"/>`;
+    svg += `<circle cx="${rx}" cy="${ry}" r="24" fill="${robot.is_stopped ? "#c8101e" : "#13294b"}" stroke="#fff" stroke-width="4"/>`;
+    if (holding) svg += `<rect x="${rx + 8}" y="${ry - 28}" width="20" height="20" fill="#f5b700" stroke="#13294b" stroke-width="3"/>`;
     const what = { IDLE: "waiting", NAVIGATING: "driving to the object", GRASPING: "picking it up",
       DELIVERING: "bringing it to you", RETURNING: "driving to the dock", EMERGENCY_STOPPED: "stopped" }[robot.state] || robot.state;
-    $("robotLine").textContent = `Robot is ${what}${holding ? `, holding the ${holding}` : ""}. Simulated until a real robot is connected.`;
+    $("robotLine").textContent = `The robot is ${what}${holding ? `, holding the ${holding}` : ""}. It is simulated until a real robot is connected.`;
   }
   $("map").innerHTML = svg;
 }
 
 /* ---------- wiring ---------- */
+async function stopRobot() {
+  try {
+    const res = await fetch("/stop", { method: "POST" });
+    const s = await res.json();
+    $("stopError").classList.add("hidden");
+    render({ ...s, hand_detected: false, intent_fired: false, probabilities: {} }, null, false);
+  } catch (e) {
+    $("stopError").classList.remove("hidden");
+  }
+}
+
 document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => selectSource(t.dataset.src)));
 $("startBtn").addEventListener("click", () => source === "photo" ? $("photoInput").click() : startWebcam());
 $("photoInput").addEventListener("change", (e) => e.target.files[0] && sendPhoto(e.target.files[0]));
@@ -756,10 +927,9 @@ $("speak").addEventListener("change", () => {
   spokenMessage = null;                                       // say the current prompt straight away
   if (!$("speak").checked) window.speechSynthesis?.cancel();
 });
-$("stopBtn").addEventListener("click", async () => {
-  const s = await (await fetch("/stop", { method: "POST" })).json();
-  render({ ...s, hand_detected: false, intent_fired: false, probabilities: {} }, null, false);
-});
+$("stopBtn").addEventListener("click", stopRobot);
+$("stopBarBtn").addEventListener("click", stopRobot);
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") stopRobot(); });
 $("resetBtn").addEventListener("click", async () => {
   await fetch(withToken("/reset"), { method: "POST" });
   renderCommands([]);
@@ -769,8 +939,15 @@ $("resetBtn").addEventListener("click", async () => {
 });
 window.addEventListener("resize", () => { if (lastOverlay) drawOverlayFor(lastOverlay); });
 
-loadConfig().then(() => selectSource("esp32"));
-pollCamera();
+async function start() {
+  await Promise.all([loadConfig(), pollCamera()]);
+  selectSource("esp32");
+  try {
+    const s = await (await fetch("/state")).json();
+    render({ ...s, hand_detected: false, intent_fired: false, probabilities: {} }, null, false);
+  } catch (e) { /* the status line already says the server is unreachable */ }
+}
+start();
 setInterval(pollCamera, 1000);
 </script>
 </body>

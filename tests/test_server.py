@@ -83,6 +83,7 @@ def test_config_describes_gestures_and_model(client):
     assert cfg["model"]["feature_version"] == "2.0"
     assert "bottle" in cfg["allowed_objects"]
     assert "bottle" in cfg["map"]["objects"]
+    assert cfg["transitions"]["IDLE"] == {"WAKE": "LISTENING"}  # the page shows which signs work now
 
 
 def test_latest_mirrors_the_last_frame(client):
@@ -101,7 +102,7 @@ def test_result_carries_overlay_and_model_details(client):
 def test_playground_page_is_served(client):
     res = client.get("/playground")
     assert res.status_code == 200
-    assert "GestureGrasp Playground" in res.text
+    assert "<title>GestureGrasp</title>" in res.text
 
 
 @pytest.mark.skipif(not Path("data/raw/point").exists(), reason="needs the downloaded HaGRID sample images")

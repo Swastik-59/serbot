@@ -169,13 +169,13 @@ def test_server_can_run_from_a_still_image(tmp_path, monkeypatch):
 
 
 def test_root_and_viewer_pages_are_served(live_client):
-    assert "GestureGrasp Playground" in live_client.get("/").text
+    assert "<title>GestureGrasp</title>" in live_client.get("/").text
     assert "EMERGENCY STOP" in live_client.get("/viewer").text
 
 
 def test_page_works_from_any_device():
     page = Path("server/static/playground.html").read_text(encoding="utf-8")
-    assert "ESP32-CAM (via Pi)" in page
+    assert "ESP32-CAM" in page
     assert "localhost" not in page and "127.0.0.1" not in page
 
 
